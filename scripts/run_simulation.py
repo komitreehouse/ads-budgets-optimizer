@@ -38,13 +38,21 @@ def main():
     print(f"Total arms created: {len(all_arms)}")
     print("Sample arms:", all_arms[:5])  # show first 5 for quick check
 
-    # Step 3: Create the ad environment
+    # Step 3: Create the ad environment with enhanced parameters
     env = AdEnvironment(
-        arm_params={
+        global_params={
             "ctr": 0.05,      # 5% click-through rate
             "cvr": 0.1,       # 10% conversion rate
             "revenue": 10.0,  # $10 per conversion
             "cpc": 1.0        # $1 cost per click
+        },
+        arm_specific_params={
+            "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+                "ctr": 0.08, "cvr": 0.15, "revenue": 12.0, "cpc": 0.9
+            },
+            "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.0)": {
+                "ctr": 0.06, "cvr": 0.12, "revenue": 11.0, "cpc": 1.1
+            }
         }
     )
 

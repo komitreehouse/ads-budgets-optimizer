@@ -1,0 +1,4555 @@
+{
+  "campaign_name": "comprehensive_mmm_optimization",
+  "start_time": "2026-01-24T12:31:26.106827",
+  "end_time": "2026-01-24T12:31:26.153683",
+  "duration_seconds": 0.046856,
+  "configuration": {
+    "name": "comprehensive_mmm_optimization",
+    "historical_data": {
+      "enabled": true,
+      "file_path": null
+    },
+    "arms": {
+      "platforms": [
+        "Google",
+        "Meta",
+        "The Trade Desk"
+      ],
+      "channels": [
+        "Search",
+        "Display",
+        "Social"
+      ],
+      "creatives": [
+        "Creative A",
+        "Creative B",
+        "Creative C"
+      ],
+      "bids": [
+        0.5,
+        1.0,
+        1.5,
+        2.0
+      ]
+    },
+    "environment": {
+      "global_params": {
+        "ctr": 0.03,
+        "cvr": 0.08,
+        "revenue": 10.0,
+        "cpc": 1.0
+      },
+      "arm_specific_params": {
+        "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+          "ctr": 0.08,
+          "cvr": 0.15,
+          "revenue": 15.0,
+          "cpc": 0.8
+        },
+        "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.5)": {
+          "ctr": 0.06,
+          "cvr": 0.12,
+          "revenue": 12.0,
+          "cpc": 1.2
+        },
+        "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=0.5)": {
+          "ctr": 0.04,
+          "cvr": 0.1,
+          "revenue": 11.0,
+          "cpc": 0.9
+        },
+        "Arm(platform=Google, channel=Display, creative=Creative A, bid=2.0)": {
+          "ctr": 0.015,
+          "cvr": 0.03,
+          "revenue": 8.0,
+          "cpc": 2.5
+        }
+      },
+      "mmm_factors": {
+        "seasonality": {
+          "Q1": {
+            "Search": 0.85,
+            "Display": 0.9,
+            "Social": 1.15
+          },
+          "Q2": {
+            "Search": 1.05,
+            "Display": 1.1,
+            "Social": 1.08
+          },
+          "Q3": {
+            "Search": 0.95,
+            "Display": 1.15,
+            "Social": 0.9
+          },
+          "Q4": {
+            "Search": 1.2,
+            "Display": 1.25,
+            "Social": 1.3
+          }
+        },
+        "carryover": {
+          "decay_rate": 0.8,
+          "max_stock": 2.0,
+          "stock_half_life": 7
+        },
+        "competition": {
+          "market_saturation_threshold": 0.7,
+          "saturation_penalty": 0.3,
+          "recovery_rate": 0.95
+        },
+        "external": {
+          "holidays": [
+            "12-25",
+            "01-01",
+            "07-04"
+          ],
+          "holiday_multiplier": 1.8
+        }
+      }
+    },
+    "agent": {
+      "total_budget": 5000.0,
+      "min_allocation": 0.005,
+      "risk_tolerance": 0.3,
+      "variance_limit": 0.1
+    },
+    "impressions_per_round": 200
+  },
+  "final_metrics": {
+    "total_spent": 613.0,
+    "total_budget": 5000.0,
+    "budget_utilization": 0.1226,
+    "total_roas": 1.0114192495921697,
+    "arm_performance": {
+      "Arm(platform=Google, channel=Search, creative=Creative A, bid=0.5)": {
+        "spending": 15.0,
+        "impressions": 400,
+        "avg_roas": 0.6666666666666666,
+        "allocation": 10.9675,
+        "alpha": 1.4285714285714286,
+        "beta": 2.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+        "spending": 48.000000000000014,
+        "impressions": 600,
+        "avg_roas": 2.499999999999999,
+        "allocation": 10.9675,
+        "alpha": 5.350490196078429,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 33.173578578684605,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative A, bid=2.0)": {
+        "spending": 7.0,
+        "impressions": 200,
+        "avg_roas": 0.0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 2.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 36.123390426592835,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 106.22697400921496,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative B, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 51.98651022355012,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 51.648465202711556,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.0)": {
+        "spending": 2.0,
+        "impressions": 200,
+        "avg_roas": 0.0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 2.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Search, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 88.62131602532695,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 65.77982682203168,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 90.68314366520937,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative A, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 106.22697400921496,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative B, bid=0.5)": {
+        "spending": 35.0,
+        "impressions": 1200,
+        "avg_roas": 1.4285714285714286,
+        "allocation": 10.9675,
+        "alpha": 4.103896103896104,
+        "beta": 4.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 33.82683911555219,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 31.8099650981838,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative B, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 103.20405367457747,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.5)": {
+        "spending": 31.0,
+        "impressions": 1000,
+        "avg_roas": 0.6451612903225806,
+        "allocation": 10.9675,
+        "alpha": 3.4444444444444446,
+        "beta": 4.0
+      },
+      "Arm(platform=Google, channel=Display, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 58.725689713072015,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 67.90888470170758,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 63.03904371649309,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.5)": {
+        "spending": 25.0,
+        "impressions": 800,
+        "avg_roas": 1.2,
+        "allocation": 10.9675,
+        "alpha": 5.111111111111111,
+        "beta": 3.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative A, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 23.687419991271682,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.0)": {
+        "spending": 15.0,
+        "impressions": 400,
+        "avg_roas": 0.6666666666666666,
+        "allocation": 10.9675,
+        "alpha": 1.1111111111111112,
+        "beta": 2.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 45.82872605628666,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative B, bid=2.0)": {
+        "spending": 17.0,
+        "impressions": 400,
+        "avg_roas": 1.1764705882352942,
+        "allocation": 10.9675,
+        "alpha": 2.0,
+        "beta": 2.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative C, bid=0.5)": {
+        "spending": 18.0,
+        "impressions": 400,
+        "avg_roas": 1.6666666666666667,
+        "allocation": 10.9675,
+        "alpha": 3.75,
+        "beta": 2.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 52.082763646451255,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.5)": {
+        "spending": 16.0,
+        "impressions": 400,
+        "avg_roas": 0.625,
+        "allocation": 10.9675,
+        "alpha": 1.0,
+        "beta": 3.0
+      },
+      "Arm(platform=Google, channel=Social, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 75.67468776704801,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 80.84959816485406,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 74.72845272020498,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.5)": {
+        "spending": 11.0,
+        "impressions": 200,
+        "avg_roas": 0.9090909090909091,
+        "allocation": 96.5699763720136,
+        "alpha": 1.0,
+        "beta": 2.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative A, bid=2.0)": {
+        "spending": 37.0,
+        "impressions": 1400,
+        "avg_roas": 0.8108108108108109,
+        "allocation": 10.9675,
+        "alpha": 2.8181818181818183,
+        "beta": 6.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 106.22697400921496,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 38.76396767586402,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 48.25609182358691,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative B, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 70.75150694057533,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 48.48887665468315,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 36.09923207855424,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 25.06472700109996,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Search, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 35.090717151225626,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 48.79625386790506,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 49.00166432468765,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 79.35398884316889,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative A, bid=2.0)": {
+        "spending": 32.0,
+        "impressions": 1600,
+        "avg_roas": 0.9375,
+        "allocation": 10.9675,
+        "alpha": 6.222222222222222,
+        "beta": 7.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 106.22697400921496,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 68.82121609225578,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.5)": {
+        "spending": 21.0,
+        "impressions": 800,
+        "avg_roas": 0.9523809523809523,
+        "allocation": 10.9675,
+        "alpha": 3.3333333333333335,
+        "beta": 4.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative B, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 26.105157654785792,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative C, bid=0.5)": {
+        "spending": 34.0,
+        "impressions": 1200,
+        "avg_roas": 0.5882352941176471,
+        "allocation": 10.9675,
+        "alpha": 3.5,
+        "beta": 5.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.0)": {
+        "spending": 18.0,
+        "impressions": 400,
+        "avg_roas": 1.1111111111111112,
+        "allocation": 10.9675,
+        "alpha": 2.5,
+        "beta": 2.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 71.4189066654962,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Display, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 96.4170682170881,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative A, bid=0.5)": {
+        "spending": 12.0,
+        "impressions": 600,
+        "avg_roas": 3.3333333333333335,
+        "allocation": 10.9675,
+        "alpha": 8.333333333333334,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.0)": {
+        "spending": 4.0,
+        "impressions": 200,
+        "avg_roas": 0.0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 2.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.5)": {
+        "spending": 33.0,
+        "impressions": 800,
+        "avg_roas": 0.6060606060606061,
+        "allocation": 10.9675,
+        "alpha": 1.0,
+        "beta": 5.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative A, bid=2.0)": {
+        "spending": 29.0,
+        "impressions": 800,
+        "avg_roas": 1.0344827586206897,
+        "allocation": 10.9675,
+        "alpha": 2.0277777777777777,
+        "beta": 2.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 32.43836489578231,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 53.08765114104441,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative B, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 78.62129446983703,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 27.599822646774953,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 29.11432783904951,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=Meta, channel=Social, creative=Creative C, bid=2.0)": {
+        "spending": 18.0,
+        "impressions": 600,
+        "avg_roas": 1.1111111111111112,
+        "allocation": 10.9675,
+        "alpha": 2.0952380952380953,
+        "beta": 2.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 82.04489267548011,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 51.57647998956116,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 45.03245023826649,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=2.0)": {
+        "spending": 6.0,
+        "impressions": 400,
+        "avg_roas": 3.3333333333333335,
+        "allocation": 10.9675,
+        "alpha": 5.0,
+        "beta": 2.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=0.5)": {
+        "spending": 28.0,
+        "impressions": 1200,
+        "avg_roas": 0.0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 7.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 52.372940542298515,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 61.61021041991252,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=2.0)": {
+        "spending": 18.0,
+        "impressions": 800,
+        "avg_roas": 0.5555555555555556,
+        "allocation": 10.9675,
+        "alpha": 3.3333333333333335,
+        "beta": 4.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 39.00153025746043,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 69.14053724922464,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.5)": {
+        "spending": 15.0,
+        "impressions": 600,
+        "avg_roas": 0.6666666666666666,
+        "allocation": 10.9675,
+        "alpha": 1.6666666666666667,
+        "beta": 3.0
+      },
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 43.11496005363819,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 76.64921285757879,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 47.56586614417301,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 64.86393837250755,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 84.43759976641276,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 55.315394609191394,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 96.03723481035044,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=2.0)": {
+        "spending": 6.0,
+        "impressions": 200,
+        "avg_roas": 0.0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 2.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 100.09510649522383,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.5)": {
+        "spending": 19.0,
+        "impressions": 600,
+        "avg_roas": 0.5263157894736842,
+        "allocation": 10.9675,
+        "alpha": 1.4285714285714286,
+        "beta": 3.0
+      },
+      "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=2.0)": {
+        "spending": 30.0,
+        "impressions": 1200,
+        "avg_roas": 1.0,
+        "allocation": 10.9675,
+        "alpha": 3.5,
+        "beta": 5.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 51.016945916748426,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 21.985484760855485,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.5)": {
+        "spending": 13.0,
+        "impressions": 400,
+        "avg_roas": 0.0,
+        "allocation": 21.935,
+        "alpha": 1.0,
+        "beta": 3.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 90.98507233743962,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 36.79057880152595,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=0.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.5)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=2.0)": {
+        "spending": 0.0,
+        "impressions": 0,
+        "avg_roas": 0,
+        "allocation": 0,
+        "alpha": 1.0,
+        "beta": 1.0
+      }
+    }
+  },
+  "total_rounds": 100,
+  "performance_log": [
+    {
+      "round": 25,
+      "metrics": {
+        "total_spent": 128.0,
+        "total_budget": 5000.0,
+        "budget_utilization": 0.0256,
+        "total_roas": 0.859375,
+        "arm_performance": {
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 85.02402914327956,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.323341023837166,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.58778989188736,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 72.51037925098478,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 29.91255815003258,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 55.19081504089242,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 66.71381917765395,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 69.1458884697494,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.162870101197456,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 67.00409379070852,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 39.586450676461034,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 13.0,
+            "impressions": 400,
+            "avg_roas": 1.5384615384615385,
+            "allocation": 99.49998084399991,
+            "alpha": 2.857142857142857,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 53.37683873057535,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 42.681994594844575,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 12.0,
+            "impressions": 600,
+            "avg_roas": 0.8333333333333334,
+            "allocation": 100.27728626695335,
+            "alpha": 3.3333333333333335,
+            "beta": 3.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 52.014462277268734,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.28610094041332,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 88.5082260263257,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 28.40758141053285,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.888429187682384,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 79.65039357679366,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 28.841689255411357,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.901415557346674,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 84.37222882347228,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.28364221954018,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 73.60470047898671,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 18.0,
+            "impressions": 800,
+            "avg_roas": 0.0,
+            "allocation": 101.17739074898995,
+            "alpha": 1.0,
+            "beta": 5.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 59.16569217101592,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.635199537409132,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 40.372614935944085,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 59.95270744122584,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.98751281429746,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 49.85193027294082,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 44.46340002104453,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 31.949324193202923,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 13.0,
+            "impressions": 600,
+            "avg_roas": 0.0,
+            "allocation": 101.17739074898995,
+            "alpha": 1.0,
+            "beta": 4.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.25706166332852,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 6.0,
+            "impressions": 200,
+            "avg_roas": 3.3333333333333335,
+            "allocation": 92.63381306588909,
+            "alpha": 3.3333333333333335,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.462854679122778,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 17.0,
+            "impressions": 600,
+            "avg_roas": 0.5882352941176471,
+            "allocation": 101.17739074898995,
+            "alpha": 2.5,
+            "beta": 3.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 85.39249316802176,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.887373110258146,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 82.20701941685367,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.93680963806374,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 16.0,
+            "impressions": 400,
+            "avg_roas": 0.625,
+            "allocation": 101.17739074898995,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 8.0,
+            "impressions": 200,
+            "avg_roas": 1.25,
+            "allocation": 90.93877803104276,
+            "alpha": 1.25,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.53736181344933,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.19186882819112,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.74044233864174,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 40.64506350825875,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 85.38716258689522,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.10793275061128,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 47.69775926025349,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 77.82138391839038,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 3.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 89.69787494223239,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 27.532774309866618,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 84.97633441729647,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 56.10418836864465,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 81.8818925805462,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 32.615201862879665,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.12661274152314,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.3171011921666,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 41.51368884853862,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 86.43301458554433,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 22.0,
+            "impressions": 1000,
+            "avg_roas": 1.3636363636363635,
+            "allocation": 101.17739074898995,
+            "alpha": 3.5,
+            "beta": 4.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 42.14892958662281,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 44.62971514307011,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 85.49306902322829,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.22894941176538,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 33.433135169940215,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          }
+        }
+      },
+      "timestamp": "2026-01-24T12:31:26.117407"
+    },
+    {
+      "round": 50,
+      "metrics": {
+        "total_spent": 264.0,
+        "total_budget": 5000.0,
+        "budget_utilization": 0.0528,
+        "total_roas": 0.8333333333333334,
+        "arm_performance": {
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 7.0,
+            "impressions": 200,
+            "avg_roas": 1.4285714285714286,
+            "allocation": 85.02402914327956,
+            "alpha": 1.4285714285714286,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.323341023837166,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.58778989188736,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 72.51037925098478,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 29.91255815003258,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 55.19081504089242,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 66.71381917765395,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 69.1458884697494,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.162870101197456,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 67.00409379070852,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 39.586450676461034,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 24.0,
+            "impressions": 1000,
+            "avg_roas": 1.25,
+            "allocation": 99.49998084399991,
+            "alpha": 3.2857142857142856,
+            "beta": 4.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 53.37683873057535,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 42.681994594844575,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 22.0,
+            "impressions": 800,
+            "avg_roas": 0.45454545454545453,
+            "allocation": 100.27728626695335,
+            "alpha": 3.3333333333333335,
+            "beta": 4.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 52.014462277268734,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.28610094041332,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 12.0,
+            "impressions": 400,
+            "avg_roas": 0.0,
+            "allocation": 88.5082260263257,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 28.40758141053285,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.888429187682384,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 79.65039357679366,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 28.841689255411357,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.901415557346674,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 5.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 84.37222882347228,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.28364221954018,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 73.60470047898671,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 21.0,
+            "impressions": 1000,
+            "avg_roas": 0.0,
+            "allocation": 101.17739074898995,
+            "alpha": 1.0,
+            "beta": 6.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 59.16569217101592,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.635199537409132,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 40.372614935944085,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 59.95270744122584,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.98751281429746,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 49.85193027294082,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 44.46340002104453,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 31.949324193202923,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 24.0,
+            "impressions": 1000,
+            "avg_roas": 0.8333333333333334,
+            "allocation": 101.17739074898995,
+            "alpha": 2.2222222222222223,
+            "beta": 5.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.25706166332852,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 17.0,
+            "impressions": 600,
+            "avg_roas": 1.1764705882352942,
+            "allocation": 92.63381306588909,
+            "alpha": 3.3333333333333335,
+            "beta": 3.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.462854679122778,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 22.0,
+            "impressions": 800,
+            "avg_roas": 0.9090909090909091,
+            "allocation": 101.17739074898995,
+            "alpha": 3.5,
+            "beta": 3.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 8.0,
+            "impressions": 200,
+            "avg_roas": 2.5,
+            "allocation": 85.39249316802176,
+            "alpha": 2.5,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.887373110258146,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 4.0,
+            "impressions": 200,
+            "avg_roas": 5.0,
+            "allocation": 82.20701941685367,
+            "alpha": 5.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.93680963806374,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 23.0,
+            "impressions": 600,
+            "avg_roas": 0.43478260869565216,
+            "allocation": 101.17739074898995,
+            "alpha": 1.0,
+            "beta": 4.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 17.0,
+            "impressions": 400,
+            "avg_roas": 1.1764705882352942,
+            "allocation": 90.93877803104276,
+            "alpha": 1.3611111111111112,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.53736181344933,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.19186882819112,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.74044233864174,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 40.64506350825875,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 6.0,
+            "impressions": 200,
+            "avg_roas": 1.6666666666666667,
+            "allocation": 85.38716258689522,
+            "alpha": 1.6666666666666667,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.10793275061128,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 47.69775926025349,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 77.82138391839038,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 8.0,
+            "impressions": 600,
+            "avg_roas": 0.0,
+            "allocation": 89.69787494223239,
+            "alpha": 1.0,
+            "beta": 4.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 27.532774309866618,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 6.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 84.97633441729647,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 56.10418836864465,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 1.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 81.8818925805462,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 32.615201862879665,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.12661274152314,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.3171011921666,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 41.51368884853862,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 9.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 86.43301458554433,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 22.0,
+            "impressions": 1000,
+            "avg_roas": 1.3636363636363635,
+            "allocation": 101.17739074898995,
+            "alpha": 3.5,
+            "beta": 4.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 42.14892958662281,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 44.62971514307011,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 6.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 85.49306902322829,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.22894941176538,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 33.433135169940215,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          }
+        }
+      },
+      "timestamp": "2026-01-24T12:31:26.128566"
+    },
+    {
+      "round": 75,
+      "metrics": {
+        "total_spent": 413.0,
+        "total_budget": 5000.0,
+        "budget_utilization": 0.0826,
+        "total_roas": 0.8958837772397095,
+        "arm_performance": {
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 15.0,
+            "impressions": 400,
+            "avg_roas": 0.6666666666666666,
+            "allocation": 85.02402914327956,
+            "alpha": 1.4285714285714286,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.323341023837166,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.58778989188736,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 72.51037925098478,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 29.91255815003258,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 55.19081504089242,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 66.71381917765395,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 69.1458884697494,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.162870101197456,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 67.00409379070852,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 39.586450676461034,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 35.0,
+            "impressions": 1200,
+            "avg_roas": 1.4285714285714286,
+            "allocation": 99.49998084399991,
+            "alpha": 4.103896103896104,
+            "beta": 4.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 53.37683873057535,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 42.681994594844575,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 31.0,
+            "impressions": 1000,
+            "avg_roas": 0.6451612903225806,
+            "allocation": 100.27728626695335,
+            "alpha": 3.4444444444444446,
+            "beta": 4.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 52.014462277268734,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.28610094041332,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 16.0,
+            "impressions": 600,
+            "avg_roas": 1.25,
+            "allocation": 88.5082260263257,
+            "alpha": 5.0,
+            "beta": 3.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 28.40758141053285,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.888429187682384,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 10.0,
+            "impressions": 200,
+            "avg_roas": 2.0,
+            "allocation": 79.65039357679366,
+            "alpha": 2.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 28.841689255411357,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.901415557346674,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 16.0,
+            "impressions": 400,
+            "avg_roas": 0.625,
+            "allocation": 84.37222882347228,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.28364221954018,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 73.60470047898671,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 26.0,
+            "impressions": 1200,
+            "avg_roas": 0.38461538461538464,
+            "allocation": 101.17739074898995,
+            "alpha": 2.0,
+            "beta": 6.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 59.16569217101592,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.635199537409132,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 40.372614935944085,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 59.95270744122584,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.98751281429746,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 49.85193027294082,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 44.46340002104453,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 31.949324193202923,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 26.0,
+            "impressions": 1200,
+            "avg_roas": 0.7692307692307693,
+            "allocation": 101.17739074898995,
+            "alpha": 2.2222222222222223,
+            "beta": 6.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.25706166332852,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 21.0,
+            "impressions": 800,
+            "avg_roas": 0.9523809523809523,
+            "allocation": 92.63381306588909,
+            "alpha": 3.3333333333333335,
+            "beta": 4.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.462854679122778,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 34.0,
+            "impressions": 1200,
+            "avg_roas": 0.5882352941176471,
+            "allocation": 101.17739074898995,
+            "alpha": 3.5,
+            "beta": 5.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 18.0,
+            "impressions": 400,
+            "avg_roas": 1.1111111111111112,
+            "allocation": 85.39249316802176,
+            "alpha": 2.5,
+            "beta": 2.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.887373110258146,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 7.0,
+            "impressions": 400,
+            "avg_roas": 4.285714285714286,
+            "allocation": 82.20701941685367,
+            "alpha": 7.333333333333334,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.93680963806374,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 33.0,
+            "impressions": 800,
+            "avg_roas": 0.6060606060606061,
+            "allocation": 101.17739074898995,
+            "alpha": 1.0,
+            "beta": 5.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 17.0,
+            "impressions": 400,
+            "avg_roas": 1.1764705882352942,
+            "allocation": 90.93877803104276,
+            "alpha": 1.3611111111111112,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 30.53736181344933,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.19186882819112,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.74044233864174,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 40.64506350825875,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 11.0,
+            "impressions": 400,
+            "avg_roas": 0.9090909090909091,
+            "allocation": 85.38716258689522,
+            "alpha": 1.6666666666666667,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.10793275061128,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 47.69775926025349,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 6.0,
+            "impressions": 400,
+            "avg_roas": 3.3333333333333335,
+            "allocation": 77.82138391839038,
+            "alpha": 5.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 17.0,
+            "impressions": 1000,
+            "avg_roas": 0.0,
+            "allocation": 89.69787494223239,
+            "alpha": 1.0,
+            "beta": 6.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 27.532774309866618,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 12.0,
+            "impressions": 600,
+            "avg_roas": 0.8333333333333334,
+            "allocation": 84.97633441729647,
+            "alpha": 3.3333333333333335,
+            "beta": 3.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 56.10418836864465,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 7.0,
+            "impressions": 400,
+            "avg_roas": 1.4285714285714286,
+            "allocation": 81.8818925805462,
+            "alpha": 1.6666666666666667,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 32.615201862879665,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.12661274152314,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.3171011921666,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 41.51368884853862,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 12.0,
+            "impressions": 400,
+            "avg_roas": 0.0,
+            "allocation": 86.43301458554433,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 30.0,
+            "impressions": 1200,
+            "avg_roas": 1.0,
+            "allocation": 101.17739074898995,
+            "alpha": 3.5,
+            "beta": 5.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 42.14892958662281,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 44.62971514307011,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 13.0,
+            "impressions": 400,
+            "avg_roas": 0.0,
+            "allocation": 85.49306902322829,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 57.22894941176538,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 33.433135169940215,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          }
+        }
+      },
+      "timestamp": "2026-01-24T12:31:26.139527"
+    },
+    {
+      "round": 100,
+      "metrics": {
+        "total_spent": 613.0,
+        "total_budget": 5000.0,
+        "budget_utilization": 0.1226,
+        "total_roas": 1.0114192495921697,
+        "arm_performance": {
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 15.0,
+            "impressions": 400,
+            "avg_roas": 0.6666666666666666,
+            "allocation": 10.9675,
+            "alpha": 1.4285714285714286,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 48.000000000000014,
+            "impressions": 600,
+            "avg_roas": 2.499999999999999,
+            "allocation": 10.9675,
+            "alpha": 5.350490196078429,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 33.173578578684605,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 7.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.123390426592835,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 106.22697400921496,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 51.98651022355012,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 51.648465202711556,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 2.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 88.62131602532695,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 65.77982682203168,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 90.68314366520937,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 106.22697400921496,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 35.0,
+            "impressions": 1200,
+            "avg_roas": 1.4285714285714286,
+            "allocation": 10.9675,
+            "alpha": 4.103896103896104,
+            "beta": 4.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 33.82683911555219,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 31.8099650981838,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 103.20405367457747,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 31.0,
+            "impressions": 1000,
+            "avg_roas": 0.6451612903225806,
+            "allocation": 10.9675,
+            "alpha": 3.4444444444444446,
+            "beta": 4.0
+          },
+          "Arm(platform=Google, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 58.725689713072015,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 67.90888470170758,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 63.03904371649309,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 25.0,
+            "impressions": 800,
+            "avg_roas": 1.2,
+            "allocation": 10.9675,
+            "alpha": 5.111111111111111,
+            "beta": 3.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 23.687419991271682,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 15.0,
+            "impressions": 400,
+            "avg_roas": 0.6666666666666666,
+            "allocation": 10.9675,
+            "alpha": 1.1111111111111112,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.82872605628666,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 17.0,
+            "impressions": 400,
+            "avg_roas": 1.1764705882352942,
+            "allocation": 10.9675,
+            "alpha": 2.0,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 18.0,
+            "impressions": 400,
+            "avg_roas": 1.6666666666666667,
+            "allocation": 10.9675,
+            "alpha": 3.75,
+            "beta": 2.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 52.082763646451255,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 16.0,
+            "impressions": 400,
+            "avg_roas": 0.625,
+            "allocation": 10.9675,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=Google, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 75.67468776704801,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 80.84959816485406,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 74.72845272020498,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 11.0,
+            "impressions": 200,
+            "avg_roas": 0.9090909090909091,
+            "allocation": 96.5699763720136,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 37.0,
+            "impressions": 1400,
+            "avg_roas": 0.8108108108108109,
+            "allocation": 10.9675,
+            "alpha": 2.8181818181818183,
+            "beta": 6.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 106.22697400921496,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 38.76396767586402,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 48.25609182358691,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 70.75150694057533,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 48.48887665468315,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.09923207855424,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 25.06472700109996,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 35.090717151225626,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 48.79625386790506,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 49.00166432468765,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 79.35398884316889,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 32.0,
+            "impressions": 1600,
+            "avg_roas": 0.9375,
+            "allocation": 10.9675,
+            "alpha": 6.222222222222222,
+            "beta": 7.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 106.22697400921496,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 68.82121609225578,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 21.0,
+            "impressions": 800,
+            "avg_roas": 0.9523809523809523,
+            "allocation": 10.9675,
+            "alpha": 3.3333333333333335,
+            "beta": 4.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 26.105157654785792,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 34.0,
+            "impressions": 1200,
+            "avg_roas": 0.5882352941176471,
+            "allocation": 10.9675,
+            "alpha": 3.5,
+            "beta": 5.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 18.0,
+            "impressions": 400,
+            "avg_roas": 1.1111111111111112,
+            "allocation": 10.9675,
+            "alpha": 2.5,
+            "beta": 2.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 71.4189066654962,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 96.4170682170881,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 12.0,
+            "impressions": 600,
+            "avg_roas": 3.3333333333333335,
+            "allocation": 10.9675,
+            "alpha": 8.333333333333334,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 4.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 33.0,
+            "impressions": 800,
+            "avg_roas": 0.6060606060606061,
+            "allocation": 10.9675,
+            "alpha": 1.0,
+            "beta": 5.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 29.0,
+            "impressions": 800,
+            "avg_roas": 1.0344827586206897,
+            "allocation": 10.9675,
+            "alpha": 2.0277777777777777,
+            "beta": 2.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 32.43836489578231,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 53.08765114104441,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 78.62129446983703,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 27.599822646774953,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 29.11432783904951,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=Meta, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 18.0,
+            "impressions": 600,
+            "avg_roas": 1.1111111111111112,
+            "allocation": 10.9675,
+            "alpha": 2.0952380952380953,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 82.04489267548011,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 51.57647998956116,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 45.03245023826649,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=2.0)": {
+            "spending": 6.0,
+            "impressions": 400,
+            "avg_roas": 3.3333333333333335,
+            "allocation": 10.9675,
+            "alpha": 5.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=0.5)": {
+            "spending": 28.0,
+            "impressions": 1200,
+            "avg_roas": 0.0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 7.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 52.372940542298515,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 61.61021041991252,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative B, bid=2.0)": {
+            "spending": 18.0,
+            "impressions": 800,
+            "avg_roas": 0.5555555555555556,
+            "allocation": 10.9675,
+            "alpha": 3.3333333333333335,
+            "beta": 4.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 39.00153025746043,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 69.14053724922464,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=1.5)": {
+            "spending": 15.0,
+            "impressions": 600,
+            "avg_roas": 0.6666666666666666,
+            "allocation": 10.9675,
+            "alpha": 1.6666666666666667,
+            "beta": 3.0
+          },
+          "Arm(platform=The Trade Desk, channel=Search, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 43.11496005363819,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 76.64921285757879,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 47.56586614417301,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 64.86393837250755,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 84.43759976641276,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 55.315394609191394,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 96.03723481035044,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative B, bid=2.0)": {
+            "spending": 6.0,
+            "impressions": 200,
+            "avg_roas": 0.0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 2.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 100.09510649522383,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=1.5)": {
+            "spending": 19.0,
+            "impressions": 600,
+            "avg_roas": 0.5263157894736842,
+            "allocation": 10.9675,
+            "alpha": 1.4285714285714286,
+            "beta": 3.0
+          },
+          "Arm(platform=The Trade Desk, channel=Display, creative=Creative C, bid=2.0)": {
+            "spending": 30.0,
+            "impressions": 1200,
+            "avg_roas": 1.0,
+            "allocation": 10.9675,
+            "alpha": 3.5,
+            "beta": 5.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 51.016945916748426,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 21.985484760855485,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=1.5)": {
+            "spending": 13.0,
+            "impressions": 400,
+            "avg_roas": 0.0,
+            "allocation": 21.935,
+            "alpha": 1.0,
+            "beta": 3.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative A, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 90.98507233743962,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 36.79057880152595,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative B, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=0.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=1.5)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          },
+          "Arm(platform=The Trade Desk, channel=Social, creative=Creative C, bid=2.0)": {
+            "spending": 0.0,
+            "impressions": 0,
+            "avg_roas": 0,
+            "allocation": 0,
+            "alpha": 1.0,
+            "beta": 1.0
+          }
+        }
+      },
+      "timestamp": "2026-01-24T12:31:26.153359"
+    }
+  ],
+  "top_performing_arms": [
+    [
+      "Arm(platform=Meta, channel=Social, creative=Creative A, bid=0.5)",
+      {
+        "spending": 12.0,
+        "impressions": 600,
+        "avg_roas": 3.3333333333333335,
+        "allocation": 10.9675,
+        "alpha": 8.333333333333334,
+        "beta": 1.0
+      }
+    ],
+    [
+      "Arm(platform=The Trade Desk, channel=Search, creative=Creative A, bid=2.0)",
+      {
+        "spending": 6.0,
+        "impressions": 400,
+        "avg_roas": 3.3333333333333335,
+        "allocation": 10.9675,
+        "alpha": 5.0,
+        "beta": 2.0
+      }
+    ],
+    [
+      "Arm(platform=Google, channel=Search, creative=Creative A, bid=1.0)",
+      {
+        "spending": 48.000000000000014,
+        "impressions": 600,
+        "avg_roas": 2.499999999999999,
+        "allocation": 10.9675,
+        "alpha": 5.350490196078429,
+        "beta": 1.0
+      }
+    ],
+    [
+      "Arm(platform=Google, channel=Social, creative=Creative C, bid=0.5)",
+      {
+        "spending": 18.0,
+        "impressions": 400,
+        "avg_roas": 1.6666666666666667,
+        "allocation": 10.9675,
+        "alpha": 3.75,
+        "beta": 2.0
+      }
+    ],
+    [
+      "Arm(platform=Google, channel=Display, creative=Creative B, bid=0.5)",
+      {
+        "spending": 35.0,
+        "impressions": 1200,
+        "avg_roas": 1.4285714285714286,
+        "allocation": 10.9675,
+        "alpha": 4.103896103896104,
+        "beta": 4.0
+      }
+    ]
+  ]
+}
