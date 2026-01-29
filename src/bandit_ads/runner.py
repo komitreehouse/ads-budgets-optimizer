@@ -18,6 +18,10 @@ from src.bandit_ads.arms import ArmManager
 from src.bandit_ads.env import AdEnvironment
 from src.bandit_ads.agent import ThompsonSamplingAgent
 from src.bandit_ads.data_loader import MMMDataLoader
+from src.bandit_ads.utils import (
+    setup_logging, get_logger, ConfigManager, 
+    retry_on_failure, handle_errors, validate_arm_params
+)
 
 class AdOptimizationRunner:
     """
@@ -30,17 +34,25 @@ class AdOptimizationRunner:
     4. Results analysis
     """
 
-    def __init__(self, campaign_config):
+    def __init__(self, campaign_config, config_manager: ConfigManager = None):
         """
         Initialize the runner with campaign configuration.
 
         Args:
             campaign_config: Dictionary containing campaign parameters
+            config_manager: Optional ConfigManager instance for global config
         """
         self.config = campaign_config
+        self.config_manager = config_manager or ConfigManager()
         self.campaign_name = campaign_config.get('name', 'default_campaign')
         self.start_time = None
         self.end_time = None
+        
+        # Set up logging
+        log_level = self.config_manager.get('logging.level', 'INFO')
+        log_file = self.config_manager.get('logging.file')
+        setup_logging(log_level, log_file)
+        self.logger = get_logger('runner')
 
         # Initialize components
         self.arm_manager = None
@@ -51,9 +63,10 @@ class AdOptimizationRunner:
         self.results_history = []
         self.performance_log = []
 
+    @handle_errors(default_return=False)
     def setup_campaign(self):
         """Set up the campaign components based on configuration."""
-        print(f"Setting up campaign: {self.campaign_name}")
+        self.logger.info(f"Setting up campaign: {self.campaign_name}")
 
         # Load historical MMM data if provided
         self.data_loader = MMMDataLoader()
@@ -63,14 +76,14 @@ class AdOptimizationRunner:
             if data_path:
                 success = self.data_loader.load_historical_data(data_path)
                 if success:
-                    print("Loaded historical MMM data for priors")
+                    self.logger.info("Loaded historical MMM data for priors")
                 else:
-                    print("Warning: Could not load historical data, using defaults")
+                    self.logger.warning("Could not load historical data, using defaults")
             else:
                 # Use sample data for demonstration
                 sample_data = self.data_loader.create_sample_historical_data()
                 self.data_loader.load_historical_data(data_dict=sample_data)
-                print("Using sample historical MMM data")
+                self.logger.info("Using sample historical MMM data")
 
         # Create arm combinations
         arm_config = self.config['arms']
@@ -82,7 +95,7 @@ class AdOptimizationRunner:
         )
 
         arms = self.arm_manager.get_arms()
-        print(f"Created {len(arms)} advertising arms")
+        self.logger.info(f"Created {len(arms)} advertising arms")
 
         # Set up environment with MMM factors
         env_config = self.config.get('environment', {})
@@ -99,12 +112,15 @@ class AdOptimizationRunner:
                     priors = self.data_loader.get_arm_priors(arm)
                     if priors['historical_performance']:
                         hist = priors['historical_performance']
-                        arm_specific_params[arm_key] = {
-                            'ctr': hist['historical_ctr'],
-                            'cvr': hist['historical_cvr'],
-                            'revenue': 10.0,  # Default revenue per conversion
-                            'cpc': 1.0       # Default cost per click
-                        }
+                        try:
+                            arm_specific_params[arm_key] = validate_arm_params({
+                                'ctr': hist['historical_ctr'],
+                                'cvr': hist['historical_cvr'],
+                                'revenue': 10.0,  # Default revenue per conversion
+                                'cpc': 1.0       # Default cost per click
+                            })
+                        except ValueError as e:
+                            self.logger.warning(f"Invalid arm params for {arm_key}: {e}")
 
         self.environment = AdEnvironment(
             global_params=env_config.get('global_params', {}),
@@ -126,7 +142,7 @@ class AdOptimizationRunner:
         if self.data_loader.historical_data:
             self._initialize_agent_priors()
 
-        print("Campaign setup complete")
+        self.logger.info("Campaign setup complete")
 
     def _initialize_agent_priors(self):
         """Initialize agent priors with historical data."""

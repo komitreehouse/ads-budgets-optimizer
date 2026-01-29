@@ -1,0 +1,81 @@
+# Example configuration file for Ads Budget Optimizer
+# Copy this to config.yaml and update with your values
+# Or use environment variables (see README)
+
+# Logging configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: logs/bandit_ads.log  # Optional log file path
+
+# Agent configuration
+agent:
+  total_budget: 5000.0
+  min_allocation: 0.005
+  risk_tolerance: 0.3
+  variance_limit: 0.1
+
+# Campaign configuration
+campaign:
+  impressions_per_round: 200
+  max_rounds: null  # null = run until budget exhausted
+  log_frequency: 50
+
+# API credentials (use environment variables in production)
+api:
+  google:
+    client_id: ""  # Set via GOOGLE_ADS_CLIENT_ID env var
+    client_secret: ""  # Set via GOOGLE_ADS_CLIENT_SECRET env var
+    refresh_token: ""  # Set via GOOGLE_ADS_REFRESH_TOKEN env var
+    developer_token: ""  # Set via GOOGLE_ADS_DEVELOPER_TOKEN env var
+  
+  meta:
+    access_token: ""  # Set via META_ACCESS_TOKEN env var
+    app_id: ""  # Set via META_APP_ID env var
+    app_secret: ""  # Set via META_APP_SECRET env var
+  
+  trade_desk:
+    username: ""  # Set via TRADE_DESK_USERNAME env var
+    password: ""  # Set via TRADE_DESK_PASSWORD env var
+
+# Data source configuration
+data_source:
+  mode: simulated  # simulated, real_time, or hybrid
+  historical_data_path: null  # Path to historical CSV/JSON data
+  update_frequency: 3600  # Seconds between data updates (real-time mode)
+
+# MMM factors (can be overridden per campaign)
+mmm_factors:
+  seasonality:
+    Q1:
+      Search: 0.85
+      Display: 0.90
+      Social: 1.15
+    Q2:
+      Search: 1.05
+      Display: 1.10
+      Social: 1.08
+    Q3:
+      Search: 0.95
+      Display: 1.15
+      Social: 0.90
+    Q4:
+      Search: 1.20
+      Display: 1.25
+      Social: 1.30
+  
+  carryover:
+    decay_rate: 0.8
+    max_stock: 2.0
+    stock_half_life: 7
+  
+  competition:
+    market_saturation_threshold: 0.7
+    saturation_penalty: 0.3
+    recovery_rate: 0.95
+  
+  external:
+    holidays:
+      - "12-25"
+      - "01-01"
+      - "07-04"
+    holiday_multiplier: 1.8

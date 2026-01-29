@@ -16,3 +16,8 @@ six==1.17.0
 tqdm==4.67.1
 tzdata==2025.3
 zipp==3.23.0
+pyyaml==6.0.1
+google-ads==24.1.0
+facebook-business==19.0.0
+requests==2.31.0
+python-dotenv==1.0.0

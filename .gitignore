@@ -1,15 +1,42 @@
 # Python virtual environment
 .venv/
+venv/
+env/
 
 # Python cache files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
 
 # OS files
 .DS_Store
+Thumbs.db
 
 # Editor / IDE files
 .vscode/
 .cursor/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+campaign_results_*.json
+*.log
+logs/
+.env
+.env.local
+config.local.yaml
+config.local.yml
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Distribution
+dist/
+build/
+*.egg-info/
