@@ -1,0 +1,163 @@
+{
+  "historical_performance": {
+    "Google_Search_Creative A_1.0": {
+      "historical_ctr": 0.085,
+      "historical_cvr": 0.142,
+      "historical_roas": 1.65,
+      "spend_baseline": 5000.0,
+      "variance_ctr": 0.0012,
+      "variance_cvr": 0.0035,
+      "impressions": 50000,
+      "clicks": 4250,
+      "conversions": 603,
+      "revenue": 9045.0,
+      "cost": 3825.0
+    },
+    "Google_Search_Creative A_2.0": {
+      "historical_ctr": 0.092,
+      "historical_cvr": 0.158,
+      "historical_roas": 1.72,
+      "spend_baseline": 4500.0,
+      "variance_ctr": 0.0015,
+      "variance_cvr": 0.0041,
+      "impressions": 40000,
+      "clicks": 3680,
+      "conversions": 581,
+      "revenue": 8715.0,
+      "cost": 4416.0
+    },
+    "Google_Search_Creative B_1.0": {
+      "historical_ctr": 0.078,
+      "historical_cvr": 0.135,
+      "historical_roas": 1.58,
+      "spend_baseline": 4800.0,
+      "variance_ctr": 0.0011,
+      "variance_cvr": 0.0032,
+      "impressions": 45000,
+      "clicks": 3510,
+      "conversions": 473,
+      "revenue": 7095.0,
+      "cost": 3159.0
+    },
+    "Google_Search_Creative B_2.0": {
+      "historical_ctr": 0.088,
+      "historical_cvr": 0.152,
+      "historical_roas": 1.68,
+      "spend_baseline": 4200.0,
+      "variance_ctr": 0.0013,
+      "variance_cvr": 0.0038,
+      "impressions": 38000,
+      "clicks": 3344,
+      "conversions": 508,
+      "revenue": 7620.0,
+      "cost": 4012.8
+    },
+    "Google_Display_Creative A_1.0": {
+      "historical_ctr": 0.032,
+      "historical_cvr": 0.085,
+      "historical_roas": 1.25,
+      "spend_baseline": 3500.0,
+      "variance_ctr": 0.0008,
+      "variance_cvr": 0.0025,
+      "impressions": 60000,
+      "clicks": 1920,
+      "conversions": 163,
+      "revenue": 2445.0,
+      "cost": 1728.0
+    },
+    "Google_Display_Creative A_2.0": {
+      "historical_ctr": 0.038,
+      "historical_cvr": 0.095,
+      "historical_roas": 1.32,
+      "spend_baseline": 3200.0,
+      "variance_ctr": 0.0009,
+      "variance_cvr": 0.0028,
+      "impressions": 55000,
+      "clicks": 2090,
+      "conversions": 198,
+      "revenue": 2970.0,
+      "cost": 2508.0
+    },
+    "Meta_Search_Creative A_1.0": {
+      "historical_ctr": 0.065,
+      "historical_cvr": 0.118,
+      "historical_roas": 1.45,
+      "spend_baseline": 4000.0,
+      "variance_ctr": 0.0010,
+      "variance_cvr": 0.0030,
+      "impressions": 48000,
+      "clicks": 3120,
+      "conversions": 368,
+      "revenue": 5520.0,
+      "cost": 2808.0
+    },
+    "Meta_Search_Creative A_2.0": {
+      "historical_ctr": 0.072,
+      "historical_cvr": 0.128,
+      "historical_roas": 1.52,
+      "spend_baseline": 3800.0,
+      "variance_ctr": 0.0012,
+      "variance_cvr": 0.0033,
+      "impressions": 45000,
+      "clicks": 3240,
+      "conversions": 414,
+      "revenue": 6210.0,
+      "cost": 3888.0
+    },
+    "Meta_Display_Creative A_1.0": {
+      "historical_ctr": 0.028,
+      "historical_cvr": 0.075,
+      "historical_roas": 1.18,
+      "spend_baseline": 3000.0,
+      "variance_ctr": 0.0007,
+      "variance_cvr": 0.0022,
+      "impressions": 50000,
+      "clicks": 1400,
+      "conversions": 105,
+      "revenue": 1575.0,
+      "cost": 1260.0
+    },
+    "Meta_Display_Creative A_2.0": {
+      "historical_ctr": 0.035,
+      "historical_cvr": 0.088,
+      "historical_roas": 1.28,
+      "spend_baseline": 2800.0,
+      "variance_ctr": 0.0008,
+      "variance_cvr": 0.0025,
+      "impressions": 47000,
+      "clicks": 1645,
+      "conversions": 144,
+      "revenue": 2160.0,
+      "cost": 1974.0
+    }
+  },
+  "seasonal_multipliers": {
+    "Q1": {
+      "Search": 0.85,
+      "Display": 0.90,
+      "Social": 1.15
+    },
+    "Q2": {
+      "Search": 1.05,
+      "Display": 1.10,
+      "Social": 1.08
+    },
+    "Q3": {
+      "Search": 0.95,
+      "Display": 1.15,
+      "Social": 0.90
+    },
+    "Q4": {
+      "Search": 1.20,
+      "Display": 1.25,
+      "Social": 1.30
+    }
+  },
+  "metadata": {
+    "date_range": "2024-01-01 to 2024-12-31",
+    "total_spend": 40000.0,
+    "total_revenue": 60000.0,
+    "overall_roas": 1.50,
+    "data_source": "mock_historical_data"
+  }
+}

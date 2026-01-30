@@ -5,6 +5,7 @@ A production-ready multi-armed bandit system for optimizing advertising spend ac
 ## Features
 
 - **Multi-Armed Bandit Optimization**: Thompson Sampling with risk constraints
+- **Contextual Bandits (Optional)**: Learn arm performance conditioned on user demographics, time-of-day, device, and custom features
 - **MMM Integration**: Seasonality, competitive effects, carryover/ad stock, external factors
 - **Real-Time API Support**: Google Ads, Meta Ads, The Trade Desk connectors
 - **Historical Data Loading**: Initialize priors from past performance
@@ -137,10 +138,13 @@ ads-budgets-optimizer/
 │       ├── api_connectors.py # API connectors (Google, Meta, TTD)
 │       ├── data_loader.py    # Historical data loading
 │       ├── runner.py         # Campaign orchestration
+│       ├── contextual_agent.py  # Contextual bandit agent
+│       ├── context_features.py  # Context feature extraction
 │       ├── utils.py          # Utilities (logging, config, errors)
 │       └── metrics.py        # Performance metrics
 ├── scripts/
-│   └── run_simulation.py     # Basic simulation script
+│   ├── run_simulation.py     # Basic simulation script
+│   └── run_contextual_example.py  # Contextual bandit example
 ├── tests/                    # Test files
 ├── config.example.yaml       # Example configuration
 ├── requirements.txt          # Python dependencies
@@ -180,6 +184,74 @@ The system includes comprehensive error handling:
 - **Logging**: Detailed error logging for debugging
 
 ## Advanced Features
+
+### Contextual Bandits (Optional)
+
+Enable contextual bandits to learn arm performance conditioned on user demographics, time-of-day, device type, and custom features. This provides more granular optimization than the standard bandit.
+
+**Configuration:**
+
+```yaml
+contextual:
+  enabled: true  # Set to true to enable
+  alpha: 1.0     # Exploration parameter (higher = more exploration)
+  features:
+    demographics:
+      age_group: true
+      gender: true
+      location: true
+    temporal:
+      hour: true
+      day_of_week: true
+      month: true
+      is_weekend: true
+    device:
+      device_type: true
+      os: false
+    custom:
+      user_segment: ["high_value", "medium_value", "low_value"]
+```
+
+**Usage:**
+
+```python
+from src.bandit_ads.runner import AdOptimizationRunner, create_sample_campaign_config
+
+# Create config with contextual bandit enabled
+config = create_sample_campaign_config()
+config['contextual'] = {
+    'enabled': True,
+    'features': {
+        'demographics': {'age_group': True, 'gender': True},
+        'temporal': {'hour': True, 'day_of_week': True}
+    }
+}
+
+# Run campaign
+runner = AdOptimizationRunner(config)
+runner.setup_campaign()
+results = runner.run_campaign(max_rounds=100)
+```
+
+**Example Script:**
+
+```bash
+python scripts/run_contextual_example.py
+```
+
+**How It Works:**
+
+- The contextual bandit uses a linear model (LinUCB) to learn: `reward = context^T * theta_arm`
+- Each arm has its own linear model that learns how context affects performance
+- The agent selects arms based on both arm attributes and current context
+- Falls back to standard Thompson Sampling if context is not provided
+
+**Benefits:**
+
+- More granular optimization (e.g., "Google Search works better for 25-34 age group in the evening")
+- Better budget allocation across user segments
+- Adapts to temporal patterns (time-of-day, day-of-week effects)
+- Customizable features for your specific use case
 
 ### MMM Factors
 

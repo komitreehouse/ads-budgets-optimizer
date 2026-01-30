@@ -8,6 +8,7 @@ Integrates arms, environment, and agent for complete MMM-based optimization.
 import sys
 from pathlib import Path
 from datetime import datetime
+from typing import Dict, Any
 import json
 
 # Add project root to path for imports
@@ -17,6 +18,7 @@ sys.path.insert(0, str(project_root))
 from src.bandit_ads.arms import ArmManager
 from src.bandit_ads.env import AdEnvironment
 from src.bandit_ads.agent import ThompsonSamplingAgent
+from src.bandit_ads.contextual_agent import ContextualBanditAgent
 from src.bandit_ads.data_loader import MMMDataLoader
 from src.bandit_ads.utils import (
     setup_logging, get_logger, ConfigManager, 
@@ -58,6 +60,7 @@ class AdOptimizationRunner:
         self.arm_manager = None
         self.environment = None
         self.agent = None
+        self.use_contextual = False
 
         # Results tracking
         self.results_history = []
@@ -128,15 +131,36 @@ class AdOptimizationRunner:
             mmm_factors=mmm_factors
         )
 
-        # Set up agent with risk constraints
+        # Set up agent (contextual or standard)
         agent_config = self.config.get('agent', {})
-        self.agent = ThompsonSamplingAgent(
-            arms=arms,
-            total_budget=agent_config.get('total_budget', 1000.0),
-            min_allocation=agent_config.get('min_allocation', 0.01),
-            risk_tolerance=agent_config.get('risk_tolerance', 0.3),
-            variance_limit=agent_config.get('variance_limit', 0.1)
-        )
+        contextual_config = self.config.get('contextual', {})
+        use_contextual = contextual_config.get('enabled', False)
+        
+        if use_contextual:
+            # Use contextual bandit agent
+            context_config = contextual_config.get('features', {})
+            self.logger.info("Using Contextual Bandit Agent")
+            self.agent = ContextualBanditAgent(
+                arms=arms,
+                total_budget=agent_config.get('total_budget', 1000.0),
+                min_allocation=agent_config.get('min_allocation', 0.01),
+                risk_tolerance=agent_config.get('risk_tolerance', 0.3),
+                variance_limit=agent_config.get('variance_limit', 0.1),
+                context_config=context_config,
+                alpha=contextual_config.get('alpha', 1.0)
+            )
+        else:
+            # Use standard Thompson Sampling agent
+            self.logger.info("Using Standard Thompson Sampling Agent")
+            self.agent = ThompsonSamplingAgent(
+                arms=arms,
+                total_budget=agent_config.get('total_budget', 1000.0),
+                min_allocation=agent_config.get('min_allocation', 0.01),
+                risk_tolerance=agent_config.get('risk_tolerance', 0.3),
+                variance_limit=agent_config.get('variance_limit', 0.1)
+            )
+        
+        self.use_contextual = use_contextual
 
         # Initialize agent priors with historical data if available
         if self.data_loader.historical_data:
@@ -168,6 +192,45 @@ class AdOptimizationRunner:
 
                 print(f"Initialized {arm_key} with historical priors: α={self.agent.alpha[arm_key]:.2f}, β={self.agent.beta[arm_key]:.2f}")
 
+    def _generate_context_for_round(self, round_num: int) -> Dict[str, Any]:
+        """
+        Generate context for a campaign round.
+        
+        In a real system, this would come from actual user data.
+        For simulation, we generate synthetic context.
+        
+        Args:
+            round_num: Current round number
+        
+        Returns:
+            Context dictionary with user_data and timestamp
+        """
+        import random
+        from datetime import datetime, timedelta
+        
+        # Simulate different user segments over time
+        user_segments = [
+            {'age': 28, 'gender': 'male', 'location': 'us', 'device_type': 'mobile'},
+            {'age': 35, 'gender': 'female', 'location': 'eu', 'device_type': 'desktop'},
+            {'age': 42, 'gender': 'male', 'location': 'us', 'device_type': 'tablet'},
+            {'age': 25, 'gender': 'female', 'location': 'asia', 'device_type': 'mobile'},
+        ]
+        
+        # Cycle through user segments
+        user_data = user_segments[round_num % len(user_segments)]
+        
+        # Add some randomness
+        if random.random() < 0.3:
+            user_data = random.choice(user_segments)
+        
+        # Simulate time progression
+        timestamp = datetime.now() + timedelta(hours=round_num)
+        
+        return {
+            'user_data': user_data,
+            'timestamp': timestamp
+        }
+
     def run_campaign(self, max_rounds=None, log_frequency=50):
         """
         Run the optimization campaign.
@@ -193,8 +256,17 @@ class AdOptimizationRunner:
 
             round_num += 1
 
-            # Select arm and simulate
-            arm = self.agent.select_arm()
+            # Generate context if using contextual bandit
+            context = None
+            if self.use_contextual:
+                context = self._generate_context_for_round(round_num)
+
+            # Select arm (with context if contextual mode)
+            if self.use_contextual and isinstance(self.agent, ContextualBanditAgent):
+                arm = self.agent.select_arm(context=context)
+            else:
+                arm = self.agent.select_arm()
+            
             impressions = self.config.get('impressions_per_round', 100)
 
             # Calculate spend amount based on agent's allocation (for MMM carryover effects)
@@ -202,10 +274,13 @@ class AdOptimizationRunner:
             allocated_budget = self.agent.current_allocation.get(arm_key, 0)
             spend_amount = min(allocated_budget * 0.1, self.agent.total_budget * 0.05)  # Spend 10% of allocation or 5% of total budget max
 
-            result = self.environment.step(arm, impressions=impressions, spend_amount=spend_amount)
+            result = self.environment.step(arm, impressions=impressions, spend_amount=spend_amount, context=context)
 
-            # Update agent
-            self.agent.update(arm, result)
+            # Update agent (with context if contextual mode)
+            if self.use_contextual and isinstance(self.agent, ContextualBanditAgent):
+                self.agent.update(arm, result, context=context)
+            else:
+                self.agent.update(arm, result)
 
             # Log results
             self.results_history.append({

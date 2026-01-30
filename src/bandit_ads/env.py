@@ -154,7 +154,7 @@ class AdEnvironment:
         """Advance the simulation time."""
         self.current_date += timedelta(days=days)
 
-    def step(self, arm, impressions=1, spend_amount=None):
+    def step(self, arm, impressions=1, spend_amount=None, context=None):
         """
         Simulate serving an ad (pulling the arm) for a given number of impressions.
         Includes comprehensive MMM factors for realistic simulation.
@@ -162,6 +162,8 @@ class AdEnvironment:
         arm: Arm object representing the ad configuration
         impressions: number of ad impressions to simulate (default 1)
         spend_amount: amount spent on this arm (for carryover effects)
+        context: Optional context dictionary (for contextual bandits)
+                Can include user_data, timestamp, etc.
         """
         # Get arm-specific parameters, fallback to global defaults
         arm_key = str(arm)  # Use string representation as key

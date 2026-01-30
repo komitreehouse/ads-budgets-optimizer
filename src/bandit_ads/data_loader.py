@@ -123,10 +123,9 @@ class MMMDataLoader:
 
     def _extract_coefficients(self):
         """Extract MMM coefficients from historical data."""
+        # Support both formats: platform_channel_combinations and historical_performance
         if 'platform_channel_combinations' in self.historical_data:
             for combo_key, metrics in self.historical_data['platform_channel_combinations'].items():
-                platform, channel = combo_key.split('_', 1)
-
                 # Initialize priors based on historical performance
                 self.mmm_coefficients[combo_key] = {
                     'ctr_baseline': metrics.get('historical_ctr', 0.03),
@@ -136,6 +135,25 @@ class MMMDataLoader:
                     'ctr_variance': metrics.get('variance_ctr', 0.001),
                     'cvr_variance': metrics.get('variance_cvr', 0.004)
                 }
+        elif 'historical_performance' in self.historical_data:
+            # Handle historical_performance format (e.g., "Google_Search_Creative A_1.0")
+            for combo_key, metrics in self.historical_data['historical_performance'].items():
+                # Extract platform and channel from key (format: Platform_Channel_...)
+                parts = combo_key.split('_')
+                if len(parts) >= 2:
+                    platform = parts[0].lower()
+                    channel = parts[1].lower()
+                    simple_key = f"{platform}_{channel}"
+                    
+                    # Initialize priors based on historical performance
+                    self.mmm_coefficients[simple_key] = {
+                        'ctr_baseline': metrics.get('historical_ctr', 0.03),
+                        'cvr_baseline': metrics.get('historical_cvr', 0.08),
+                        'roas_baseline': metrics.get('historical_roas', 1.2),
+                        'spend_baseline': metrics.get('spend_baseline', 1000),
+                        'ctr_variance': metrics.get('variance_ctr', 0.001),
+                        'cvr_variance': metrics.get('variance_cvr', 0.004)
+                    }
 
     def _extract_seasonal_patterns(self):
         """Extract seasonal patterns from data."""
