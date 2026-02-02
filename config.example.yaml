@@ -2,6 +2,32 @@
 # Copy this to config.yaml and update with your values
 # Or use environment variables (see README)
 
+# =============================================================================
+# Interpretability Layer Configuration
+# =============================================================================
+interpretability:
+  llm:
+    # Claude API for explanations (set via ANTHROPIC_API_KEY env var)
+    claude_api_key: ""
+    claude_model: "claude-3-5-sonnet-20241022"
+    
+    # OpenAI API for structured queries (set via OPENAI_API_KEY env var)
+    openai_api_key: ""
+    openai_model: "gpt-4-turbo"
+  
+  # Vector store for RAG context
+  vector_store:
+    type: "chromadb"  # chromadb or pinecone
+    persist_directory: "data/chroma"
+  
+  # Research tools
+  research:
+    # Tavily for web search (set via TAVILY_API_KEY env var)
+    tavily_api_key: ""
+    
+    # Google Trends (uses pytrends, no API key needed)
+    google_trends_enabled: true
+
 # Logging configuration
 logging:
   level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
