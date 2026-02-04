@@ -686,6 +686,82 @@ class TradeDeskConnector(BaseAPIConnector):
         self.advertiser_id = credentials.get('advertiser_id', '')
         self.rate_limit_delay = 1.0
     
+    def _get_arm_from_db(self, arm: Arm, campaign_id: Optional[int] = None) -> Optional[int]:
+        """
+        Look up arm in database to get its ID.
+        
+        Args:
+            arm: Arm object
+            campaign_id: Optional campaign ID to narrow search
+        
+        Returns:
+            Database arm ID or None if not found
+        """
+        from src.bandit_ads.database import get_db_manager
+        from sqlalchemy import and_
+        
+        db_manager = get_db_manager()
+        with db_manager.get_session() as session:
+            from src.bandit_ads.database import Arm as DBArm
+            
+            query = session.query(DBArm).filter(
+                and_(
+                    DBArm.platform == arm.platform,
+                    DBArm.channel == arm.channel,
+                    DBArm.creative == arm.creative
+                )
+            )
+            
+            if campaign_id:
+                query = query.filter(DBArm.campaign_id == campaign_id)
+            
+            db_arm = query.first()
+            return db_arm.id if db_arm else None
+    
+    def _get_campaign_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> str:
+        """
+        Map arm to TTD campaign ID.
+        
+        First tries to get from arm's platform_entity_ids in database,
+        then falls back to credentials default.
+        """
+        # Try to get from database
+        arm_id = db_arm_id
+        if not arm_id:
+            arm_id = self._get_arm_from_db(arm)
+        
+        if arm_id:
+            entity_ids = get_arm_platform_entity_ids(arm_id)
+            if entity_ids and 'campaign_id' in entity_ids:
+                return str(entity_ids['campaign_id'])
+        
+        # Fall back to credentials default
+        return self.credentials.get('default_campaign_id', '')
+    
+    def _get_strategy_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> Optional[str]:
+        """Get TTD strategy ID from arm's platform_entity_ids."""
+        arm_id = db_arm_id
+        if not arm_id:
+            arm_id = self._get_arm_from_db(arm)
+        
+        if arm_id:
+            entity_ids = get_arm_platform_entity_ids(arm_id)
+            if entity_ids and 'strategy_id' in entity_ids:
+                return str(entity_ids['strategy_id'])
+        return None
+    
+    def _get_ad_group_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> Optional[str]:
+        """Get TTD ad group ID from arm's platform_entity_ids."""
+        arm_id = db_arm_id
+        if not arm_id:
+            arm_id = self._get_arm_from_db(arm)
+        
+        if arm_id:
+            entity_ids = get_arm_platform_entity_ids(arm_id)
+            if entity_ids and 'ad_group_id' in entity_ids:
+                return str(entity_ids['ad_group_id'])
+        return None
+    
     @retry_on_failure(max_retries=3, delay=2.0)
     def authenticate(self) -> bool:
         """Authenticate with The Trade Desk API."""
@@ -731,45 +807,185 @@ class TradeDeskConnector(BaseAPIConnector):
         self._rate_limit()
         
         try:
-            # The Trade Desk API endpoint for reporting
-            url = f"https://api.thetradedesk.com/v3/myquery/report"
+            # Look up arm in database to get campaign ID
+            db_arm_id = self._get_arm_from_db(arm)
+            campaign_id = self._get_campaign_id(arm, db_arm_id)
             
+            if not campaign_id:
+                self.logger.warning(f"No campaign ID found for arm {arm}")
+                return self._empty_metrics()
+            
+            # The Trade Desk API endpoint for reporting
+            url = "https://api.thetradedesk.com/v3/myquery/report"
+            
+            # Build query parameters
             params = {
                 'AdvertiserId': self.advertiser_id,
                 'StartDate': start_date.strftime('%Y-%m-%d'),
                 'EndDate': end_date.strftime('%Y-%m-%d'),
                 'GroupBy': ['CampaignId'],
-                'Metrics': ['Impressions', 'Clicks', 'Conversions', 'Spend', 'Revenue']
+                'Metrics': ['Impressions', 'Clicks', 'Conversions', 'Spend', 'Revenue'],
+                'Filter': {
+                    'CampaignId': campaign_id
+                }
             }
             
             response = self.session.post(url, json=params)
             
             if response.status_code == 200:
                 data = response.json()
-                # Process response and aggregate metrics
-                # This is simplified - actual implementation would parse the report
+                
+                # Parse TTD report response
+                # TTD returns data in a structured format
+                total_impressions = 0
+                total_clicks = 0
+                total_conversions = 0
+                total_cost = 0.0
+                total_revenue = 0.0
+                
+                # Handle different response formats
+                if isinstance(data, dict):
+                    # Check if response has ReportData array
+                    report_data = data.get('ReportData', [])
+                    if report_data:
+                        for row in report_data:
+                            total_impressions += int(row.get('Impressions', 0))
+                            total_clicks += int(row.get('Clicks', 0))
+                            total_conversions += int(row.get('Conversions', 0))
+                            total_cost += float(row.get('Spend', 0.0))
+                            total_revenue += float(row.get('Revenue', 0.0))
+                    else:
+                        # Fallback to top-level keys
+                        total_impressions = int(data.get('Impressions', 0))
+                        total_clicks = int(data.get('Clicks', 0))
+                        total_conversions = int(data.get('Conversions', 0))
+                        total_cost = float(data.get('Spend', 0.0))
+                        total_revenue = float(data.get('Revenue', 0.0))
+                elif isinstance(data, list):
+                    # Handle array response
+                    for row in data:
+                        total_impressions += int(row.get('Impressions', 0))
+                        total_clicks += int(row.get('Clicks', 0))
+                        total_conversions += int(row.get('Conversions', 0))
+                        total_cost += float(row.get('Spend', 0.0))
+                        total_revenue += float(row.get('Revenue', 0.0))
+                
+                roas = total_revenue / total_cost if total_cost > 0 else 0.0
+                
                 return {
-                    'impressions': data.get('Impressions', 0),
-                    'clicks': data.get('Clicks', 0),
-                    'conversions': data.get('Conversions', 0),
-                    'cost': data.get('Spend', 0.0),
-                    'revenue': data.get('Revenue', 0.0),
-                    'roas': data.get('Revenue', 0.0) / data.get('Spend', 1.0) if data.get('Spend', 0) > 0 else 0.0,
+                    'impressions': total_impressions,
+                    'clicks': total_clicks,
+                    'conversions': total_conversions,
+                    'cost': total_cost,
+                    'revenue': total_revenue,
+                    'roas': roas,
                     'source': 'trade_desk',
                     'timestamp': datetime.now().isoformat()
                 }
             else:
-                self.logger.error(f"The Trade Desk API error: {response.text}")
+                self.logger.error(f"The Trade Desk API error: {response.status_code} - {response.text}")
                 return self._empty_metrics()
                 
         except Exception as e:
             self.logger.error(f"Error fetching The Trade Desk metrics: {str(e)}")
             return self._empty_metrics()
     
+    @retry_on_failure(max_retries=3)
     def update_bid(self, arm: Arm, new_bid: float) -> bool:
-        """Update bid in The Trade Desk."""
-        self.logger.info(f"Updating bid for {arm} to ${new_bid}")
-        return True
+        """
+        Update bid in The Trade Desk.
+        
+        Updates the bid for a strategy or ad group based on arm's platform_entity_ids.
+        """
+        if not self.session:
+            self.logger.error("Not authenticated. Call authenticate() first.")
+            return False
+        
+        self._rate_limit()
+        
+        try:
+            import requests
+            
+            # Look up arm in database first
+            db_arm_id = self._get_arm_from_db(arm)
+            
+            # Get platform entity IDs
+            strategy_id = self._get_strategy_id(arm, db_arm_id)
+            ad_group_id = self._get_ad_group_id(arm, db_arm_id)
+            campaign_id = self._get_campaign_id(arm, db_arm_id)
+            
+            if strategy_id:
+                # Update strategy bid (preferred method)
+                self.logger.info(f"Updating strategy bid for arm {arm} to ${new_bid}")
+                
+                url = f"https://api.thetradedesk.com/v3/strategy/{strategy_id}"
+                
+                # Get current strategy to preserve other settings
+                get_response = self.session.get(url)
+                if get_response.status_code != 200:
+                    self.logger.error(f"Failed to get strategy: {get_response.text}")
+                    return False
+                
+                strategy_data = get_response.json()
+                
+                # Update bid amount (convert dollars to micros for TTD)
+                # TTD uses micros (1/1,000,000 of currency unit)
+                strategy_data['BidAmountInMicros'] = int(new_bid * 1_000_000)
+                
+                # Update strategy
+                update_response = self.session.put(url, json=strategy_data)
+                
+                if update_response.status_code == 200:
+                    # Update bid in database
+                    if db_arm_id:
+                        update_arm_bid(db_arm_id, new_bid)
+                    
+                    self.logger.info(f"Successfully updated strategy bid to ${new_bid}")
+                    return True
+                else:
+                    self.logger.error(f"Failed to update strategy bid: {update_response.text}")
+                    return False
+                    
+            elif ad_group_id:
+                # Update ad group bid (fallback)
+                self.logger.info(f"Updating ad group bid for arm {arm} to ${new_bid}")
+                
+                url = f"https://api.thetradedesk.com/v3/adgroup/{ad_group_id}"
+                
+                # Get current ad group
+                get_response = self.session.get(url)
+                if get_response.status_code != 200:
+                    self.logger.error(f"Failed to get ad group: {get_response.text}")
+                    return False
+                
+                ad_group_data = get_response.json()
+                
+                # Update bid amount
+                ad_group_data['BidAmountInMicros'] = int(new_bid * 1_000_000)
+                
+                # Update ad group
+                update_response = self.session.put(url, json=ad_group_data)
+                
+                if update_response.status_code == 200:
+                    # Update bid in database
+                    if db_arm_id:
+                        update_arm_bid(db_arm_id, new_bid)
+                    
+                    self.logger.info(f"Successfully updated ad group bid to ${new_bid}")
+                    return True
+                else:
+                    self.logger.error(f"Failed to update ad group bid: {update_response.text}")
+                    return False
+            else:
+                self.logger.warning(
+                    f"Cannot update bid for arm {arm}: missing strategy_id or ad_group_id. "
+                    f"Set platform_entity_ids in the arm's database record."
+                )
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error updating The Trade Desk bid: {str(e)}")
+            return False
     
     def get_available_campaigns(self) -> List[Dict[str, Any]]:
         """Get list of available Trade Desk campaigns."""
