@@ -14,6 +14,13 @@ import time
 
 from src.bandit_ads.utils import get_logger, retry_on_failure, handle_errors
 from src.bandit_ads.arms import Arm
+from src.bandit_ads.db_helpers import (
+    get_arm_platform_entity_ids, 
+    update_arm_bid,
+    get_arm,
+    get_arm_by_attributes
+)
+import json
 
 
 class BaseAPIConnector(ABC):
@@ -190,12 +197,122 @@ class GoogleAdsConnector(BaseAPIConnector):
             self.logger.error(f"Error fetching Google Ads metrics: {str(e)}")
             return self._empty_metrics()
     
+    @retry_on_failure(max_retries=3)
     def update_bid(self, arm: Arm, new_bid: float) -> bool:
-        """Update bid in Google Ads."""
-        # Implementation would use Google Ads API to update keyword bids
-        # or ad group bids based on arm configuration
-        self.logger.info(f"Updating bid for {arm} to ${new_bid}")
-        return True
+        """
+        Update bid in Google Ads.
+        
+        Updates keyword bid if keyword_id is available, otherwise updates ad group bid.
+        """
+        if not self.client:
+            self.logger.error("Not authenticated. Call authenticate() first.")
+            return False
+        
+        self._rate_limit()
+        
+        try:
+            from google.ads.googleads.errors import GoogleAdsException
+            # Use the client's version-agnostic methods instead of hardcoded version
+            # The client handles versioning automatically
+            
+            # Look up arm in database first
+            db_arm_id = self._get_arm_from_db(arm)
+            
+            keyword_id = self._get_keyword_id(arm, db_arm_id)
+            ad_group_id = self._get_ad_group_id(arm, db_arm_id)
+            campaign_id = self._get_campaign_id(arm, db_arm_id)
+            
+            if keyword_id and ad_group_id:
+                # Update keyword bid (CPC bid)
+                self.logger.info(f"Updating keyword bid for arm {arm} to ${new_bid}")
+                
+                # Get services
+                google_ads_service = self.client.get_service("GoogleAdsService")
+                ad_group_criterion_service = self.client.get_service("AdGroupCriterionService")
+                
+                # Create ad group criterion operation
+                ad_group_criterion = self.client.get_type("AdGroupCriterion")
+                ad_group_criterion.resource_name = google_ads_service.ad_group_criterion_path(
+                    self.customer_id, ad_group_id, keyword_id
+                )
+                
+                # Set the bid (convert dollars to micros)
+                ad_group_criterion.cpc_bid_micros = int(new_bid * 1_000_000)
+                
+                # Create mutate operation
+                mutate_operation = self.client.get_type("AdGroupCriterionOperation")
+                mutate_operation.update = ad_group_criterion
+                mutate_operation.update_mask.CopyFrom(
+                    self.client.get_type("FieldMask")(paths=["cpc_bid_micros"])
+                )
+                
+                # Execute the mutation
+                response = ad_group_criterion_service.mutate_ad_group_criteria(
+                    customer_id=self.customer_id,
+                    operations=[mutate_operation]
+                )
+                
+                # Update bid in database
+                if db_arm_id:
+                    update_arm_bid(db_arm_id, new_bid)
+                
+                self.logger.info(f"Successfully updated keyword bid to ${new_bid}")
+                return True
+                
+            elif ad_group_id:
+                # Update ad group bid (CPC bid)
+                self.logger.info(f"Updating ad group bid for arm {arm} to ${new_bid}")
+                
+                # Get services
+                google_ads_service = self.client.get_service("GoogleAdsService")
+                ad_group_service = self.client.get_service("AdGroupService")
+                
+                # Create ad group operation
+                ad_group = self.client.get_type("AdGroup")
+                ad_group.resource_name = google_ads_service.ad_group_path(
+                    self.customer_id, ad_group_id
+                )
+                
+                # Set the bid (convert dollars to micros)
+                ad_group.cpc_bid_micros = int(new_bid * 1_000_000)
+                
+                # Create mutate operation
+                mutate_operation = self.client.get_type("AdGroupOperation")
+                mutate_operation.update = ad_group
+                mutate_operation.update_mask.CopyFrom(
+                    self.client.get_type("FieldMask")(paths=["cpc_bid_micros"])
+                )
+                
+                # Execute the mutation
+                response = ad_group_service.mutate_ad_groups(
+                    customer_id=self.customer_id,
+                    operations=[mutate_operation]
+                )
+                
+                # Update bid in database
+                if db_arm_id:
+                    update_arm_bid(db_arm_id, new_bid)
+                
+                self.logger.info(f"Successfully updated ad group bid to ${new_bid}")
+                return True
+            else:
+                self.logger.warning(
+                    f"Cannot update bid for arm {arm}: missing keyword_id or ad_group_id. "
+                    f"Set platform_entity_ids in the arm's database record."
+                )
+                return False
+                
+        except ImportError:
+            self.logger.warning(
+                "google-ads library not installed. Install with: pip install google-ads"
+            )
+            return False
+        except GoogleAdsException as e:
+            self.logger.error(f"Google Ads API error updating bid: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error updating Google Ads bid: {str(e)}")
+            return False
     
     def get_available_campaigns(self) -> List[Dict[str, Any]]:
         """Get list of available Google Ads campaigns."""
@@ -217,10 +334,81 @@ class GoogleAdsConnector(BaseAPIConnector):
             self.logger.error(f"Error fetching campaigns: {str(e)}")
             return []
     
-    def _get_campaign_id(self, arm: Arm) -> str:
-        """Map arm to Google Ads campaign ID. This is a placeholder."""
-        # In production, you'd maintain a mapping between arms and campaign IDs
+    def _get_arm_from_db(self, arm: Arm, campaign_id: Optional[int] = None) -> Optional[int]:
+        """
+        Look up arm in database to get its ID.
+        
+        Args:
+            arm: Arm object
+            campaign_id: Optional campaign ID to narrow search
+        
+        Returns:
+            Database arm ID or None if not found
+        """
+        from src.bandit_ads.database import get_db_manager
+        from sqlalchemy import and_
+        
+        db_manager = get_db_manager()
+        with db_manager.get_session() as session:
+            from src.bandit_ads.database import Arm as DBArm
+            
+            query = session.query(DBArm).filter(
+                and_(
+                    DBArm.platform == arm.platform,
+                    DBArm.channel == arm.channel,
+                    DBArm.creative == arm.creative
+                )
+            )
+            
+            if campaign_id:
+                query = query.filter(DBArm.campaign_id == campaign_id)
+            
+            db_arm = query.first()
+            return db_arm.id if db_arm else None
+    
+    def _get_campaign_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> str:
+        """
+        Map arm to Google Ads campaign ID.
+        
+        First tries to get from arm's platform_entity_ids in database,
+        then falls back to credentials default.
+        """
+        # Try to get from database
+        arm_id = db_arm_id
+        if not arm_id:
+            arm_id = self._get_arm_from_db(arm)
+        
+        if arm_id:
+            entity_ids = get_arm_platform_entity_ids(arm_id)
+            if entity_ids and 'campaign_id' in entity_ids:
+                return str(entity_ids['campaign_id'])
+        
+        # Fall back to credentials default
         return self.credentials.get('default_campaign_id', '')
+    
+    def _get_ad_group_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> Optional[str]:
+        """Get Google Ads ad group ID from arm's platform_entity_ids."""
+        arm_id = db_arm_id
+        if not arm_id:
+            arm_id = self._get_arm_from_db(arm)
+        
+        if arm_id:
+            entity_ids = get_arm_platform_entity_ids(arm_id)
+            if entity_ids and 'ad_group_id' in entity_ids:
+                return str(entity_ids['ad_group_id'])
+        return None
+    
+    def _get_keyword_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> Optional[str]:
+        """Get Google Ads keyword ID from arm's platform_entity_ids."""
+        arm_id = db_arm_id
+        if not arm_id:
+            arm_id = self._get_arm_from_db(arm)
+        
+        if arm_id:
+            entity_ids = get_arm_platform_entity_ids(arm_id)
+            if entity_ids and 'keyword_id' in entity_ids:
+                return str(entity_ids['keyword_id'])
+        return None
     
     def _empty_metrics(self) -> Dict[str, Any]:
         """Return empty metrics structure."""
@@ -349,10 +537,112 @@ class MetaAdsConnector(BaseAPIConnector):
             self.logger.error(f"Error fetching Meta Ads metrics: {str(e)}")
             return self._empty_metrics()
     
+    @retry_on_failure(max_retries=3)
     def update_bid(self, arm: Arm, new_bid: float) -> bool:
-        """Update bid in Meta Ads."""
-        self.logger.info(f"Updating bid for {arm} to ${new_bid}")
-        return True
+        """
+        Update bid in Meta Ads.
+        
+        Updates the bid for an ad set or ad based on arm's platform_entity_ids.
+        """
+        if not self.api:
+            self.logger.error("Not authenticated. Call authenticate() first.")
+            return False
+        
+        self._rate_limit()
+        
+        try:
+            from facebook_business.adobjects.adset import AdSet
+            from facebook_business.adobjects.ad import Ad
+            from facebook_business.exceptions import FacebookRequestError
+            
+            # Look up arm in database first
+            from src.bandit_ads.database import get_db_manager
+            from sqlalchemy import and_
+            from src.bandit_ads.database import Arm as DBArm
+            
+            db_manager = get_db_manager()
+            db_arm_id = None
+            with db_manager.get_session() as session:
+                db_arm = session.query(DBArm).filter(
+                    and_(
+                        DBArm.platform == arm.platform,
+                        DBArm.channel == arm.channel,
+                        DBArm.creative == arm.creative
+                    )
+                ).first()
+                if db_arm:
+                    db_arm_id = db_arm.id
+            
+            # Get platform entity IDs from database
+            entity_ids = None
+            if db_arm_id:
+                entity_ids = get_arm_platform_entity_ids(db_arm_id)
+            
+            ad_set_id = None
+            ad_id = None
+            
+            if entity_ids:
+                ad_set_id = entity_ids.get('ad_set_id') or entity_ids.get('adset_id')
+                ad_id = entity_ids.get('ad_id')
+            
+            # Try to update ad set bid first (most common)
+            if ad_set_id:
+                self.logger.info(f"Updating ad set bid for arm {arm} to ${new_bid}")
+                ad_set = AdSet(ad_set_id)
+                
+                # Update bid amount based on bidding strategy
+                # Meta uses different fields: bid_amount, cost_per_result, etc.
+                # For CPC campaigns, use bid_amount
+                update_params = {
+                    'bid_amount': int(new_bid * 100)  # Convert to cents
+                }
+                
+                ad_set.update(params=update_params)
+                
+                # Update bid in database
+                if db_arm_id:
+                    update_arm_bid(db_arm_id, new_bid)
+                
+                self.logger.info(f"Successfully updated ad set bid to ${new_bid}")
+                return True
+            
+            # Fall back to ad-level bid update if ad_id is available
+            elif ad_id:
+                self.logger.info(f"Updating ad bid for arm {arm} to ${new_bid}")
+                ad = Ad(ad_id)
+                
+                # Note: Ad-level bid updates are less common in Meta
+                # This may need to be adjusted based on your campaign structure
+                update_params = {
+                    'bid_amount': int(new_bid * 100)  # Convert to cents
+                }
+                
+                ad.update(params=update_params)
+                
+                # Update bid in database
+                if db_arm_id:
+                    update_arm_bid(db_arm_id, new_bid)
+                
+                self.logger.info(f"Successfully updated ad bid to ${new_bid}")
+                return True
+            else:
+                self.logger.warning(
+                    f"Cannot update bid for arm {arm}: missing ad_set_id or ad_id. "
+                    f"Set platform_entity_ids in the arm's database record."
+                )
+                return False
+                
+        except ImportError:
+            self.logger.warning(
+                "facebook-business library not installed. Install with: pip install facebook-business"
+            )
+            return False
+        except FacebookRequestError as e:
+            self.logger.error(f"Meta API error updating bid: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error updating Meta Ads bid: {str(e)}")
+            return False
     
     def get_available_campaigns(self) -> List[Dict[str, Any]]:
         """Get list of available Meta campaigns."""

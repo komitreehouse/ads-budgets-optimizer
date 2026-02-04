@@ -30,6 +30,12 @@ logs/
 config.local.yaml
 config.local.yml
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+
 # Testing
 .pytest_cache/
 .coverage

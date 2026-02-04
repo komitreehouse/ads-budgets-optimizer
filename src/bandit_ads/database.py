@@ -49,6 +49,9 @@ class Arm(Base):
     channel = Column(String(100), nullable=False)
     creative = Column(String(255), nullable=False)
     bid = Column(Float, nullable=False)
+    # Platform-specific entity IDs (e.g., Google Ads campaign_id, ad_group_id, keyword_id)
+    # Stored as JSON string: {"campaign_id": "123", "ad_group_id": "456", "keyword_id": "789"}
+    platform_entity_ids = Column(Text, nullable=True)  # JSON string for platform-specific IDs
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships

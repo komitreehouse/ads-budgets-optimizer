@@ -57,12 +57,18 @@ def create_arm(arm_data: ArmCreate) -> Arm:
     """Create a new arm."""
     db_manager = get_db_manager()
     with db_manager.get_session() as session:
+        # Convert platform_entity_ids dict to JSON string if provided
+        platform_entity_ids_json = None
+        if arm_data.platform_entity_ids:
+            platform_entity_ids_json = json.dumps(arm_data.platform_entity_ids)
+        
         arm = Arm(
             campaign_id=arm_data.campaign_id,
             platform=arm_data.platform,
             channel=arm_data.channel,
             creative=arm_data.creative,
-            bid=arm_data.bid
+            bid=arm_data.bid,
+            platform_entity_ids=platform_entity_ids_json
         )
         session.add(arm)
         session.flush()
@@ -91,6 +97,51 @@ def get_arm_by_attributes(campaign_id: int, platform: str, channel: str,
                 Arm.bid == bid
             )
         ).first()
+
+
+def get_arm(arm_id: int) -> Optional[Arm]:
+    """Get an arm by ID."""
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        return session.query(Arm).filter(Arm.id == arm_id).first()
+
+
+def get_arm_platform_entity_ids(arm_id: int) -> Optional[Dict[str, Any]]:
+    """Get platform-specific entity IDs for an arm."""
+    arm = get_arm(arm_id)
+    if arm and arm.platform_entity_ids:
+        try:
+            return json.loads(arm.platform_entity_ids)
+        except (json.JSONDecodeError, TypeError):
+            logger.warning(f"Invalid platform_entity_ids JSON for arm {arm_id}")
+            return None
+    return None
+
+
+def update_arm_platform_entity_ids(arm_id: int, platform_entity_ids: Dict[str, Any]) -> bool:
+    """Update platform-specific entity IDs for an arm."""
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        arm = session.query(Arm).filter(Arm.id == arm_id).first()
+        if arm:
+            arm.platform_entity_ids = json.dumps(platform_entity_ids)
+            session.flush()
+            logger.info(f"Updated platform_entity_ids for arm {arm_id}")
+            return True
+        return False
+
+
+def update_arm_bid(arm_id: int, new_bid: float) -> bool:
+    """Update bid for an arm in the database."""
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        arm = session.query(Arm).filter(Arm.id == arm_id).first()
+        if arm:
+            arm.bid = new_bid
+            session.flush()
+            logger.info(f"Updated bid for arm {arm_id} to ${new_bid}")
+            return True
+        return False
 
 
 def create_metric(metric_data: MetricCreate) -> Metric:

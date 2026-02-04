@@ -41,6 +41,7 @@ class ArmCreate(BaseModel):
     channel: str = Field(..., min_length=1, max_length=100)
     creative: str = Field(..., min_length=1, max_length=255)
     bid: float = Field(..., gt=0)
+    platform_entity_ids: Optional[Dict[str, Any]] = None  # Platform-specific IDs (e.g., {"campaign_id": "123", "ad_group_id": "456"})
 
 
 class ArmResponse(BaseModel):
@@ -51,6 +52,7 @@ class ArmResponse(BaseModel):
     channel: str
     creative: str
     bid: float
+    platform_entity_ids: Optional[Dict[str, Any]] = None
     created_at: datetime
     
     class Config:

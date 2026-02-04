@@ -13,3 +13,9 @@ __pycache__/
 # Editor / IDE files
 .vscode/
 .cursor/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
