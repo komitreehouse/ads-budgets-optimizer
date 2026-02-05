@@ -33,6 +33,23 @@ class Campaign(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Campaign settings and targets
+    primary_kpi = Column(String(50), default='ROAS')  # ROAS, CPA, Revenue, Conversions
+    target_roas = Column(Float, nullable=True)
+    target_cpa = Column(Float, nullable=True)
+    target_revenue = Column(Float, nullable=True)
+    target_conversions = Column(Integer, nullable=True)
+    
+    # Benchmarks (industry/account-level)
+    benchmark_roas = Column(Float, nullable=True)
+    benchmark_cpa = Column(Float, nullable=True)
+    benchmark_revenue = Column(Float, nullable=True)
+    benchmark_conversions = Column(Integer, nullable=True)
+    
+    # Status thresholds (configurable)
+    scaling_threshold = Column(Float, default=1.1)  # 1.1 = 10% above target
+    stable_threshold = Column(Float, default=0.9)  # 0.9 = 10% below target
+    
     # Relationships
     arms = relationship("Arm", back_populates="campaign", cascade="all, delete-orphan")
     metrics = relationship("Metric", back_populates="campaign", cascade="all, delete-orphan")
