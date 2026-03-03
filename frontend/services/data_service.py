@@ -61,6 +61,17 @@ class DataService:
             print(f"API request failed: {e}")
             return None
     
+    def _api_post(self, endpoint: str, json: Optional[Dict] = None, data: Optional[Dict] = None) -> Optional[Dict]:
+        """Make POST request to API."""
+        try:
+            url = f"{self.api_base_url}{endpoint}"
+            response = requests.post(url, json=json, data=data, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"API POST request failed: {e}")
+            return None
+    
     # =========================================================================
     # Dashboard Summary
     # =========================================================================
@@ -1551,7 +1562,7 @@ Would you like me to provide more specific details? Try asking:
         total_spend = 0
         total_conversions = 0
         
-        for step in range(steps):
+        for sim_step in range(steps):
             allocations = agent.get_allocations()
             
             step_revenue = 0
@@ -1560,12 +1571,15 @@ Would you like me to provide more specific details? Try asking:
             
             for i, arm in enumerate(arms):
                 arm_budget = config.get('total_budget', 10000) * allocations[i] / steps
-                result = environment.get_reward(arm, arm_budget)
+                impressions = int(arm_budget * 100)  # Estimate impressions from budget
+                result = environment.step(arm, impressions=impressions, spend_amount=arm_budget)
                 
-                agent.update(i, result['roas'] / 10.0)  # Normalize for beta distribution
+                # Calculate ROAS for this step
+                step_roas = result['roas'] if result['roas'] > 0 else 1.0
+                agent.update(i, min(step_roas / 10.0, 1.0))  # Normalize for beta distribution
                 
                 step_revenue += result['revenue']
-                step_spend += arm_budget
+                step_spend += result['cost']
                 step_conversions += result['conversions']
             
             total_revenue += step_revenue
@@ -1697,7 +1711,7 @@ Would you like me to provide more specific details? Try asking:
         recommendations = self._generate_recommendations(arm_results)
         
         # Calculate improvement
-        avg_historical = sum(a.get('historical_roas', a['roas']) for a in arms) / len(arms)
+        avg_historical = sum(a.get('historical_roas', a.get('optimized_roas', 1.5)) for a in arms) / len(arms)
         improvement = ((final_roas - avg_historical) / avg_historical) * 100 if avg_historical > 0 else 0
         
         return {

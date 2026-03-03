@@ -37,8 +37,10 @@ def render():
     # Header
     st.markdown("""
     <div style="text-align: center; padding: 20px 0;">
-        <h1 style="margin: 0;">🚀 Get Started with Budget Optimizer</h1>
-        <p style="color: #737373; margin-top: 8px;">
+        <h1 style="font-family: 'Radley', Georgia, serif; font-weight: 400; margin: 0; color: #1a1a1a;">
+            🚀 Get Started with Budget Optimizer
+        </h1>
+        <p style="color: #717182; margin-top: 8px;">
             Upload your historical data to see the AI-powered budget optimization in action
         </p>
     </div>
@@ -85,23 +87,23 @@ def render_progress_indicator(current_step: int):
                 </div>
                 """, unsafe_allow_html=True)
             elif step_num == current_step:
-                # Current
+                # Current - Use IPSA terracotta
                 st.markdown(f"""
                 <div style="text-align: center;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366F1; 
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #9b4819; 
                          color: white; display: inline-flex; align-items: center; justify-content: center;
                          font-weight: 600;">{icon}</div>
-                    <p style="margin: 8px 0 0 0; font-size: 0.875rem; color: #6366F1; font-weight: 600;">{label}</p>
+                    <p style="margin: 8px 0 0 0; font-size: 0.875rem; color: #9b4819; font-weight: 600;">{label}</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 # Future
                 st.markdown(f"""
                 <div style="text-align: center;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #E5E5E5; 
-                         color: #737373; display: inline-flex; align-items: center; justify-content: center;
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #ececf0; 
+                         color: #717182; display: inline-flex; align-items: center; justify-content: center;
                          font-weight: 600;">{num}</div>
-                    <p style="margin: 8px 0 0 0; font-size: 0.875rem; color: #737373;">{label}</p>
+                    <p style="margin: 8px 0 0 0; font-size: 0.875rem; color: #717182;">{label}</p>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -172,26 +174,23 @@ def render_step_1_upload():
                 st.session_state.uploaded_data = None
     
     with col2:
-        # Format guide
-        st.markdown("""
-        <div class="card" style="background: #F9FAFB;">
-            <h4 style="margin: 0 0 12px 0;">📋 Supported Formats</h4>
+        # Format guide - using Streamlit native components for better rendering
+        with st.container():
+            st.markdown("#### 📋 Supported Formats")
             
-            <p style="font-weight: 600; margin: 0;">JSON Format:</p>
-            <ul style="font-size: 0.875rem; color: #737373; margin: 4px 0 12px 0; padding-left: 20px;">
-                <li>historical_performance</li>
-                <li>seasonal_multipliers</li>
-                <li>Platform/channel metrics</li>
-            </ul>
+            st.markdown("**JSON Format:**")
+            st.markdown("""
+            - `historical_performance`
+            - `seasonal_multipliers`
+            - Platform/channel metrics
+            """)
             
-            <p style="font-weight: 600; margin: 0;">CSV Format:</p>
-            <ul style="font-size: 0.875rem; color: #737373; margin: 4px 0 12px 0; padding-left: 20px;">
-                <li>platform, channel columns</li>
-                <li>ctr, cvr, roas metrics</li>
-                <li>impressions, clicks, etc.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+            st.markdown("**CSV Format:**")
+            st.markdown("""
+            - `platform`, `channel` columns
+            - `ctr`, `cvr`, `roas` metrics
+            - `impressions`, `clicks`, etc.
+            """)
         
         # Sample data option
         st.markdown("<br>", unsafe_allow_html=True)
@@ -327,18 +326,13 @@ def render_step_2_preview():
                 st.caption(f"Showing 10 of {len(df)} rows")
     
     with col2:
-        # Data insights
-        st.markdown("""
-        <div class="card" style="background: #F0FDF4;">
-            <h4 style="margin: 0 0 12px 0; color: #166534;">📈 Data Insights</h4>
-        """, unsafe_allow_html=True)
+        # Data insights - using Streamlit native components
+        st.markdown("#### 📈 Data Insights")
         
         insights = extract_data_insights(data, data_type)
         
         for insight in insights:
-            st.markdown(f"• {insight}")
-        
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"- {insight}")
         
         # Visualization
         st.markdown("<br>", unsafe_allow_html=True)
@@ -472,14 +466,9 @@ def render_step_3_configure():
         cols = st.columns(4)
         for i, arm in enumerate(arms[:8]):
             with cols[i % 4]:
-                st.markdown(f"""
-                <div class="card" style="padding: 12px; margin-bottom: 8px;">
-                    <p style="margin: 0; font-size: 0.875rem; font-weight: 600;">{arm['name']}</p>
-                    <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #737373;">
-                        {arm['platform']} • {arm['channel']}
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+                with st.container(border=True):
+                    st.markdown(f"**{arm['name']}**")
+                    st.caption(f"{arm['platform']} • {arm['channel']}")
         
         if len(arms) > 8:
             st.caption(f"... and {len(arms) - 8} more arms")
@@ -609,23 +598,18 @@ def render_step_4_optimize():
         
         if recommendations:
             for rec in recommendations:
-                rec_type_colors = {
-                    'increase': '#22C55E',
-                    'decrease': '#EF4444',
-                    'maintain': '#6366F1',
-                    'watch': '#F59E0B'
+                rec_type_icons = {
+                    'increase': '📈',
+                    'decrease': '📉',
+                    'maintain': '✓',
+                    'watch': '👁️'
                 }
-                color = rec_type_colors.get(rec.get('type', 'maintain'), '#6366F1')
+                icon = rec_type_icons.get(rec.get('type', 'maintain'), '💡')
                 
-                st.markdown(f"""
-                <div class="recommendation-card" style="margin-bottom: 12px; border-left: 4px solid {color};">
-                    <h4 style="margin: 0; font-size: 0.9rem;">{rec['title']}</h4>
-                    <p style="font-size: 0.8rem; color: #737373; margin: 4px 0 0 0;">{rec['description']}</p>
-                    <p style="font-size: 0.75rem; color: {color}; margin: 8px 0 0 0;">
-                        Expected Impact: {rec.get('impact', 'N/A')}
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+                with st.container(border=True):
+                    st.markdown(f"**{icon} {rec['title']}**")
+                    st.caption(rec['description'])
+                    st.markdown(f"*Expected Impact: {rec.get('impact', 'N/A')}*")
         else:
             st.info("No specific recommendations at this time.")
         
@@ -640,9 +624,9 @@ def render_step_4_optimize():
                 x=list(range(len(roas_history))),
                 y=roas_history,
                 mode='lines',
-                line=dict(color='#6366F1', width=2),
+                line=dict(color='#9b4819', width=2),
                 fill='tozeroy',
-                fillcolor='rgba(99, 102, 241, 0.1)'
+                fillcolor='rgba(155, 72, 25, 0.1)'
             ))
             fig.update_layout(
                 margin=dict(t=10, b=30, l=40, r=10),

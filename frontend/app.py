@@ -1,8 +1,7 @@
 """
-Ads Budget Optimizer Dashboard - Streamlit MVP
+IPSA - Budget Optimizer Dashboard
 
 A clean, modern dashboard for the ads budget optimization system.
-Inspired by Mixpanel's design aesthetic.
 """
 
 import streamlit as st
@@ -10,8 +9,8 @@ from datetime import datetime
 
 # Page configuration - MUST be first Streamlit command
 st.set_page_config(
-    page_title="Ads Budget Optimizer",
-    page_icon="📊",
+    page_title="Ipsa | Budget Optimizer",
+    page_icon="○",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,81 +19,109 @@ st.set_page_config(
 from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding
 from frontend.components.chat_widget import render_chat_widget
 
-# Custom CSS for Mixpanel-like styling
+# Custom CSS for IPSA brand styling
 def load_custom_css():
     st.markdown("""
     <style>
-    /* Main colors */
+    /* Import Radley font */
+    @import url('https://fonts.googleapis.com/css2?family=Radley:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+    
+    /* IPSA Brand Colors */
     :root {
-        --primary: #7C3AED;
-        --primary-light: #EDE9FE;
-        --success: #22C55E;
-        --warning: #F59E0B;
-        --error: #EF4444;
-        --gray-50: #FAFAFA;
-        --gray-100: #F5F5F5;
-        --gray-200: #E5E5E5;
-        --gray-500: #737373;
-        --gray-900: #171717;
+        --primary: #9b4819;           /* Terracotta */
+        --primary-light: #bd8f53;      /* Golden Tan */
+        --background: #f4f1e8;         /* Cream/Beige */
+        --card-bg: #ffffff;            /* White */
+        --muted-bg: #ececf0;           /* Light Gray */
+        --muted-fg: #717182;           /* Medium Gray */
+        --accent: #e9ebef;             /* Light Blue-Gray */
+        --destructive: #d4183d;        /* Red */
+        --success: #22C55E;            /* Green */
+        --warning: #F59E0B;            /* Amber */
+        --foreground: #1a1a1a;         /* Near Black */
+        --switch-bg: #cbced4;          /* Gray */
     }
     
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: white;
-        border-right: 1px solid #E5E5E5;
+    /* Global font settings */
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        font-size: 14px;
+    /* Headings use Radley */
+    h1, h2, h3, h4, .greeting, .card-header, .section-header {
+        font-family: 'Radley', Georgia, serif !important;
+        font-weight: 400 !important;
     }
     
-    /* Main content area */
+    /* Main app background */
+    .stApp {
+        background-color: var(--background);
+    }
+    
     .main .block-container {
+        background-color: var(--background);
         padding-top: 2rem;
         padding-bottom: 2rem;
         max-width: 1400px;
     }
     
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: var(--card-bg);
+        border-right: 1px solid var(--muted-bg);
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        font-size: 14px;
+        color: var(--foreground);
+    }
+    
+    /* Logo/Brand text in sidebar */
+    .sidebar-brand {
+        font-family: 'Radley', Georgia, serif;
+        color: var(--primary);
+    }
+    
     /* Metric cards */
     .metric-card {
-        background: white;
+        background: var(--card-bg);
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid #E5E5E5;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid var(--muted-bg);
     }
     
     .metric-value {
         font-size: 2rem;
         font-weight: 600;
-        color: #171717;
+        color: var(--foreground);
         margin: 0;
     }
     
     .metric-label {
         font-size: 0.875rem;
-        color: #737373;
+        color: var(--muted-fg);
         margin-bottom: 4px;
     }
     
     .metric-trend-up {
-        color: #22C55E;
+        color: var(--success);
         font-size: 0.875rem;
     }
     
     .metric-trend-down {
-        color: #EF4444;
+        color: var(--destructive);
         font-size: 0.875rem;
     }
     
     /* Status badges */
     .status-active {
-        background: #DCFCE7;
-        color: #166534;
+        background: #e8f5e9;
+        color: #2e7d32;
         padding: 4px 12px;
         border-radius: 9999px;
         font-size: 12px;
@@ -102,8 +129,8 @@ def load_custom_css():
     }
     
     .status-paused {
-        background: #FEF3C7;
-        color: #92400E;
+        background: #fff3e0;
+        color: #e65100;
         padding: 4px 12px;
         border-radius: 9999px;
         font-size: 12px;
@@ -112,25 +139,26 @@ def load_custom_css():
     
     /* Cards */
     .card {
-        background: white;
+        background: var(--card-bg);
         border-radius: 12px;
         padding: 24px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid #E5E5E5;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid var(--muted-bg);
         margin-bottom: 16px;
     }
     
     .card-header {
+        font-family: 'Radley', Georgia, serif;
         font-size: 1.125rem;
-        font-weight: 600;
-        color: #171717;
+        font-weight: 400;
+        color: var(--foreground);
         margin-bottom: 16px;
     }
     
     /* Explanation card */
     .explanation-card {
-        background: #F5F3FF;
-        border-left: 4px solid #7C3AED;
+        background: #fdf6f0;
+        border-left: 4px solid var(--primary);
         padding: 16px 20px;
         border-radius: 0 8px 8px 0;
         margin: 16px 0;
@@ -144,40 +172,61 @@ def load_custom_css():
     }
     
     .chat-message-user {
-        background: #7C3AED;
+        background: var(--primary);
         color: white;
         margin-left: 20%;
     }
     
     .chat-message-assistant {
-        background: #F5F5F5;
-        color: #171717;
+        background: var(--muted-bg);
+        color: var(--foreground);
         margin-right: 20%;
     }
     
     /* Recommendation card */
     .recommendation-card {
-        background: white;
-        border: 1px solid #E5E5E5;
+        background: var(--card-bg);
+        border: 1px solid var(--muted-bg);
         border-radius: 12px;
         padding: 20px;
         margin-bottom: 16px;
     }
     
     .recommendation-card:hover {
-        border-color: #7C3AED;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(155, 72, 25, 0.1);
     }
     
-    /* Buttons */
+    /* Buttons - Primary */
     .stButton > button {
         border-radius: 8px;
         font-weight: 500;
+        font-family: 'Inter', sans-serif;
     }
     
-    .stButton > button[kind="primary"] {
-        background-color: #7C3AED;
-        color: white;
+    .stButton > button[kind="primary"], 
+    .stButton > button[data-testid="baseButton-primary"] {
+        background-color: var(--primary) !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    .stButton > button[kind="primary"]:hover,
+    .stButton > button[data-testid="baseButton-primary"]:hover {
+        background-color: #7d3a14 !important;
+    }
+    
+    /* Buttons - Secondary */
+    .stButton > button[kind="secondary"],
+    .stButton > button[data-testid="baseButton-secondary"] {
+        background-color: var(--card-bg) !important;
+        color: var(--foreground) !important;
+        border: 1px solid var(--muted-bg) !important;
+    }
+    
+    .stButton > button[kind="secondary"]:hover,
+    .stButton > button[data-testid="baseButton-secondary"]:hover {
+        background-color: var(--muted-bg) !important;
     }
     
     /* Navigation styling */
@@ -188,33 +237,35 @@ def load_custom_css():
         border-radius: 8px;
         margin-bottom: 4px;
         text-decoration: none;
-        color: #737373;
+        color: var(--muted-fg);
         transition: all 0.2s;
     }
     
     .nav-link:hover {
-        background: #F5F5F5;
-        color: #171717;
+        background: var(--muted-bg);
+        color: var(--foreground);
     }
     
     .nav-link.active {
-        background: #EDE9FE;
-        color: #7C3AED;
+        background: #fdf6f0;
+        color: var(--primary);
     }
     
     /* Section headers */
     .section-header {
+        font-family: 'Radley', Georgia, serif;
         font-size: 1.25rem;
-        font-weight: 600;
-        color: #171717;
+        font-weight: 400;
+        color: var(--foreground);
         margin-bottom: 16px;
     }
     
     /* Greeting */
     .greeting {
+        font-family: 'Radley', Georgia, serif;
         font-size: 1.875rem;
-        font-weight: 600;
-        color: #171717;
+        font-weight: 400;
+        color: var(--foreground);
         margin-bottom: 24px;
     }
     
@@ -227,14 +278,117 @@ def load_custom_css():
     .allocation-bar {
         height: 8px;
         border-radius: 4px;
-        background: #E5E5E5;
+        background: var(--muted-bg);
         overflow: hidden;
     }
     
     .allocation-fill {
         height: 100%;
         border-radius: 4px;
-        background: linear-gradient(90deg, #7C3AED, #A78BFA);
+        background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    }
+    
+    /* Form inputs */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > div,
+    .stNumberInput > div > div > input {
+        background-color: var(--card-bg);
+        border: 1px solid var(--muted-bg);
+        border-radius: 8px;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > div:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(155, 72, 25, 0.1);
+    }
+    
+    /* File uploader */
+    .stFileUploader > div {
+        background-color: var(--card-bg);
+        border: 2px dashed var(--muted-bg);
+        border-radius: 12px;
+    }
+    
+    .stFileUploader > div:hover {
+        border-color: var(--primary);
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        border-radius: 8px;
+        color: var(--muted-fg);
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: var(--card-bg);
+        color: var(--primary);
+    }
+    
+    /* Dataframes */
+    .stDataFrame {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Expanders */
+    .streamlit-expanderHeader {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        color: var(--foreground);
+    }
+    
+    /* Metrics (Streamlit native) */
+    [data-testid="stMetricValue"] {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        color: var(--foreground);
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: var(--muted-fg);
+    }
+    
+    /* Progress step indicator */
+    .progress-step {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-weight: 600;
+    }
+    
+    .progress-step-active {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .progress-step-complete {
+        background: var(--success);
+        color: white;
+    }
+    
+    .progress-step-pending {
+        background: var(--muted-bg);
+        color: var(--muted-fg);
+    }
+    
+    /* Slider */
+    .stSlider > div > div > div > div {
+        background-color: var(--primary);
+    }
+    
+    /* Toggle */
+    .stCheckbox > label > div[data-testid="stCheckbox"] > div {
+        background-color: var(--primary);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -257,11 +411,14 @@ def render_sidebar():
         # Logo / Brand
         st.markdown("""
         <div style="padding: 16px 0 24px 0;">
-            <h1 style="font-size: 1.25rem; font-weight: 700; color: #7C3AED; margin: 0;">
-                📊 Ads Optimizer
-            </h1>
-            <p style="font-size: 0.75rem; color: #737373; margin: 4px 0 0 0;">
-                Budget Optimization Dashboard
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.5rem; color: #9b4819;">○</span>
+                <h1 style="font-family: 'Radley', Georgia, serif; font-size: 1.5rem; font-weight: 400; color: #9b4819; margin: 0;">
+                    Ipsa
+                </h1>
+            </div>
+            <p style="font-size: 0.75rem; color: #717182; margin: 4px 0 0 0;">
+                Budget Optimizer
             </p>
         </div>
         """, unsafe_allow_html=True)
