@@ -44,6 +44,53 @@ class ContinuousOptimizationService:
     - Handles multiple campaigns concurrently
     - Graceful shutdown/restart
     - Health monitoring
+    
+    Current Implementation
+    ----------------------
+    Uses IncrementalityAwareBandit by default with Thompson Sampling and
+    real-time holdout tracking. This provides production-ready optimization
+    with incrementality feedback.
+    
+    FUTURE BAYESIAN INTEGRATION POINT:
+    ----------------------------------
+    This service is where real-time Bayesian updates would be orchestrated:
+    
+    1. BAYESIAN LAYER INITIALIZATION:
+       When a campaign is added, initialize Bayesian layer with priors:
+       # def add_campaign(self, campaign_id, campaign_config):
+       #     ...
+       #     if self.bayesian_layer_enabled:
+       #         self.bayesian_layers[campaign_id] = BayesianMMMLayer(
+       #             prior_source='incrementality_experiments'  # Use experiment results as priors
+       #         )
+    
+    2. REAL-TIME POSTERIOR UPDATES:
+       After each optimization cycle, update Bayesian posteriors:
+       # def _optimize_campaign(self, campaign_id):
+       #     ...
+       #     if campaign_id in self.bayesian_layers:
+       #         self.bayesian_layers[campaign_id].update_posterior(
+       #             arm=arm, result=result, context=context
+       #         )
+    
+    3. INCREMENTALITY EXPERIMENT COMPLETION TRIGGER:
+       When experiments complete, trigger Bayesian prior updates:
+       # def on_experiment_completed(self, experiment_result):
+       #     campaign_id = experiment_result['campaign_id']
+       #     if campaign_id in self.bayesian_layers:
+       #         self.bayesian_layers[campaign_id].incorporate_incrementality_prior(
+       #             experiment_result
+       #         )
+       #     # Also update the bandit agent
+       #     runner = self.campaign_runners.get(campaign_id)
+       #     if runner and isinstance(runner.agent, IncrementalityAwareBandit):
+       #         runner.agent.incorporate_incrementality(arm_key, experiment_result)
+    
+    4. UNCERTAINTY-AWARE ALLOCATION:
+       Pass Bayesian uncertainty to agent for richer exploration:
+       # allocation = runner.agent.allocate_with_uncertainty(
+       #     bayesian_posterior=self.bayesian_layers[campaign_id].get_posterior()
+       # )
     """
     
     def __init__(self, config_manager: Optional[ConfigManager] = None, 

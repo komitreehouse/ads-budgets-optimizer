@@ -11,6 +11,47 @@ class AdEnvironment:
 
     Includes seasonality, competitive effects, carryover/ad stock, and external factors
     for realistic multi-armed bandit advertising simulation.
+    
+    Current Implementation
+    ----------------------
+    Uses rule-based configurable MMM factors:
+    - Seasonality: Quarterly multipliers per channel (configurable dict)
+    - Carryover/Ad Stock: Exponential decay model with configurable decay_rate
+    - Diminishing Returns: Saturation curves with configurable thresholds
+    - External Factors: Holiday multipliers and economic indicators
+    
+    This rule-based approach is intentional for production stability, interpretability,
+    and real-time performance requirements.
+    
+    FUTURE BAYESIAN INTEGRATION POINT:
+    ----------------------------------
+    When variational inference is added, the MMM factors could be enhanced with
+    learned uncertainty estimates without changing the core architecture:
+    
+    1. SEASONALITY WITH UNCERTAINTY:
+       Current: Fixed multipliers (e.g., Q4_Search = 1.20)
+       Future: Posterior distributions (e.g., Q4_Search ~ Normal(1.20, 0.15))
+       # seasonal_multiplier = self._sample_seasonal_posterior(quarter, channel)
+    
+    2. CARRYOVER PARAMETERS:
+       Current: Fixed decay_rate = 0.8
+       Future: Learned decay rate with uncertainty
+       # decay_rate = self.bayesian_layer.get_posterior('decay_rate').sample()
+    
+    3. SATURATION CURVES:
+       Current: Fixed market_saturation_threshold = 0.7
+       Future: Learned saturation curves with credible intervals
+       # This enables uncertainty-aware budget allocation near saturation
+    
+    4. PROPAGATING UNCERTAINTY:
+       The step() method should propagate uncertainty through MMM factors:
+       # result['uncertainty'] = self._propagate_mmm_uncertainty(arm, spend)
+       # This feeds into IncrementalityAwareBandit for calibrated Thompson Sampling
+    
+    5. INTEGRATION WITH INCREMENTALITY:
+       Incrementality results can validate/calibrate MMM factor estimates:
+       # if incrementality_lift != expected_mmm_lift:
+       #     self.bayesian_layer.update_mmm_factors(observed_discrepancy)
     """
 
     def __init__(self, global_params=None, arm_specific_params=None, mmm_factors=None):

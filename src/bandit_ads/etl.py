@@ -21,7 +21,48 @@ logger = get_logger('etl')
 
 
 class ETLPipeline:
-    """ETL pipeline for MMM data processing."""
+    """
+    ETL pipeline for MMM data processing.
+    
+    Current Implementation
+    ----------------------
+    Extracts campaign data, transforms for MMM analysis, and loads updated
+    coefficients. Uses Ridge Regression for coefficient estimation with
+    rule-based MMM feature calculation.
+    
+    FUTURE BAYESIAN INTEGRATION POINT:
+    ----------------------------------
+    This pipeline is where Bayesian model updates would be triggered. When VI is added:
+    
+    1. BATCH BAYESIAN UPDATES:
+       The run_full_pipeline() method should trigger Bayesian posterior updates:
+       # def run_full_pipeline(self, campaign_id):
+       #     ...
+       #     if self.bayesian_layer is not None:
+       #         self.bayesian_layer.update_posteriors(transformed_data)
+    
+    2. INCREMENTALITY EVIDENCE INCORPORATION:
+       When incrementality experiments complete, ETL should feed results to Bayesian layer:
+       # def incorporate_incrementality_results(self, experiment_results):
+       #     '''Update Bayesian priors with incrementality evidence'''
+       #     for result in experiment_results:
+       #         self.bayesian_layer.add_evidence(
+       #             channel=result['arm_key'],
+       #             lift=result['lift_percent'],
+       #             ci=result['confidence_interval']
+       #         )
+    
+    3. SCHEDULED PRIOR UPDATES:
+       The scheduler could trigger periodic Bayesian retraining:
+       # scheduler.add_daily_job(
+       #     func=self.bayesian_layer.retrain_with_new_data,
+       #     job_id='bayesian_daily_update'
+       # )
+    
+    4. UNCERTAINTY PROPAGATION:
+       load_mmm_coefficients() should store uncertainty alongside point estimates:
+       # mmm_data['coefficient_uncertainty'] = self.bayesian_layer.get_credible_intervals()
+    """
     
     def __init__(self, lookback_days: int = 30):
         """

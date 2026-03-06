@@ -8,6 +8,30 @@ class ThompsonSamplingAgent:
 
     Includes risk constraints to balance expected returns with variance limits.
     Optimizes for total ROAS while controlling downside risk.
+    
+    Architecture Notes
+    ------------------
+    Current implementation uses Beta distributions for Thompson Sampling, which provides
+    a lightweight Bayesian approach suitable for real-time optimization.
+    
+    FUTURE BAYESIAN INTEGRATION POINT:
+    ----------------------------------
+    A variational inference layer could be added here to provide richer uncertainty
+    quantification without the computational cost of full MCMC. Potential integration:
+    
+    1. Replace point estimates of arm performance with posterior distributions over
+       ROAS/conversion rates using variational approximations (e.g., mean-field VI).
+    
+    2. The current Beta(alpha, beta) priors could be extended to incorporate:
+       - MMM coefficient uncertainty from a Bayesian regression layer
+       - Incrementality experiment results as informative priors
+       - Time-varying effects via state-space models
+    
+    3. Key method to extend: _sample_beta() could sample from a richer posterior
+       that accounts for correlated uncertainties across arms and MMM factors.
+    
+    Dependencies that would be needed: None currently. Future: Consider lightweight
+    libraries like NumPyro (JAX-based VI) or TensorFlow Probability for VI layers.
     """
 
     def __init__(self, arms, total_budget, min_allocation=0.01, risk_tolerance=0.3, variance_limit=0.1):
@@ -28,6 +52,18 @@ class ThompsonSamplingAgent:
         self.variance_limit = variance_limit
 
         # Beta distribution parameters for each arm (alpha=successes+1, beta=failures+1)
+        # 
+        # FUTURE BAYESIAN INTEGRATION POINT:
+        # These uninformative priors (alpha=1, beta=1) could be replaced with informative
+        # priors derived from:
+        #   1. Bayesian regression posteriors on MMM coefficients (provides channel-level priors)
+        #   2. Incrementality experiment results (provides calibrated priors based on true lift)
+        #   3. Historical campaign data with proper uncertainty propagation
+        # 
+        # When adding VI layer: Initialize these from the posterior mean/variance of the
+        # Bayesian regression, converting Gaussian posteriors to Beta parameters via
+        # moment matching: alpha = mu * (mu*(1-mu)/var - 1), beta = (1-mu) * same
+        #
         self.alpha = defaultdict(lambda: 1.0)  # successes (good ROAS outcomes)
         self.beta = defaultdict(lambda: 1.0)   # failures (poor ROAS outcomes)
 
@@ -277,6 +313,36 @@ class IncrementalityAwareBandit(ThompsonSamplingAgent):
     2. Compare observed ROAS to incremental ROAS
     3. Adjust alpha/beta priors based on the gap
     4. Reallocate budget to arms with higher incremental value
+    
+    FUTURE BAYESIAN INTEGRATION POINT:
+    ----------------------------------
+    This class is the primary integration point for connecting Bayesian uncertainty
+    with incrementality testing. When a Bayesian layer is added:
+    
+    1. INCREMENTALITY → BAYESIAN PRIORS:
+       Incrementality experiment results (lift_percent, confidence_intervals, iROAS)
+       should become informative priors for Bayesian regression coefficients. Instead
+       of starting the Bayesian model with uninformative priors, use:
+       - Lift percent → prior mean for channel effectiveness
+       - Confidence intervals → prior variance (tighter CI = lower variance prior)
+       - P-value/significance → prior strength (significant = stronger prior)
+    
+    2. BAYESIAN UNCERTAINTY → THOMPSON SAMPLING:
+       The Bayesian posterior uncertainty on MMM coefficients should feed into
+       incorporate_incrementality() to provide richer, calibrated uncertainty:
+       - Current: Adjust alpha/beta based on observed vs incremental ROAS ratio
+       - Future: Use full posterior distribution to set alpha/beta, accounting for
+         coefficient correlations and time-varying effects
+    
+    3. EXPERIMENT COMPLETION → PRIOR UPDATE TRIGGER:
+       When an experiment completes with is_significant=True, this should trigger
+       a Bayesian prior update (not just alpha/beta adjustment). The flow:
+       incorporate_incrementality() → bayesian_layer.update_priors(experiment_result)
+    
+    4. UNCERTAINTY SURFACING:
+       The Bayesian layer's credible intervals should be exposed via a new method
+       (e.g., get_bayesian_uncertainty()) for the incrementality dashboard to display
+       both experiment-derived and model-derived uncertainty together.
     """
     
     def __init__(self, arms, total_budget, holdout_percentage=0.10, **kwargs):
@@ -343,6 +409,26 @@ class IncrementalityAwareBandit(ThompsonSamplingAgent):
                 - observed_roas: Attributed/observed ROAS
                 - is_significant: Whether results are statistically significant
                 - confidence_interval: (lower, upper) CI bounds
+        
+        FUTURE BAYESIAN INTEGRATION POINT:
+        ----------------------------------
+        When a Bayesian layer is added, this method should be extended to:
+        
+        1. Trigger Bayesian prior update when is_significant=True:
+           # if self.bayesian_layer is not None:
+           #     self.bayesian_layer.update_channel_prior(
+           #         channel=arm_key,
+           #         prior_mean=experiment_result['incremental_roas'],
+           #         prior_std=self._ci_to_std(experiment_result['confidence_interval']),
+           #         evidence_strength=experiment_result.get('sample_size', 1000)
+           #     )
+        
+        2. Use Bayesian posterior uncertainty instead of heuristic alpha/beta adjustments:
+           # posterior = self.bayesian_layer.get_posterior(arm_key)
+           # self.alpha[arm_key], self.beta[arm_key] = self._gaussian_to_beta(posterior)
+        
+        3. Store the experiment result for future Bayesian model retraining:
+           # self.bayesian_layer.add_incrementality_evidence(arm_key, experiment_result)
         """
         if not experiment_result.get('is_significant', False):
             # Don't update priors if results aren't significant

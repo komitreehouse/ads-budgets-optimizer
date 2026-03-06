@@ -17,6 +17,47 @@ class MMMDataLoader:
 
     Provides baseline coefficients, seasonal patterns, and historical priors
     for initializing the bandit agent with realistic performance expectations.
+    
+    Current Implementation
+    ----------------------
+    Uses Ridge Regression for MMM coefficient estimation with rule-based
+    configurable factors for seasonality, ad stock, and diminishing returns.
+    This approach is intentional for production stability and real-time performance.
+    
+    FUTURE BAYESIAN INTEGRATION POINT:
+    ----------------------------------
+    This class is a natural location for adding Bayesian uncertainty quantification
+    to MMM coefficients. When variational inference (VI) is added:
+    
+    1. COEFFICIENT ESTIMATION WITH UNCERTAINTY:
+       Current: Point estimates via Ridge Regression (mmm_coefficients dict)
+       Future: Posterior distributions via VI, storing both mean and variance:
+       # self.mmm_posteriors = {
+       #     'google_search': {'mean': 2.1, 'std': 0.3, 'credible_interval': (1.5, 2.7)},
+       #     ...
+       # }
+    
+    2. INCREMENTAL RESULTS AS PRIORS:
+       When incrementality experiments complete, their results should update
+       the Bayesian priors for coefficient estimation:
+       # def incorporate_incrementality_prior(self, channel, lift_result):
+       #     '''Use incrementality lift as informative prior for channel coefficient'''
+       #     prior_mean = lift_result['incremental_roas']
+       #     prior_std = self._ci_to_std(lift_result['confidence_interval'])
+       #     self.bayesian_priors[channel] = NormalPrior(prior_mean, prior_std)
+    
+    3. INTEGRATION WITH get_arm_priors():
+       The get_arm_priors() method should return uncertainty information:
+       # return {
+       #     'alpha': ..., 'beta': ...,
+       #     'coefficient_mean': posterior.mean,
+       #     'coefficient_std': posterior.std,
+       #     'credible_interval': posterior.hdi(0.95)
+       # }
+    
+    4. NO NEW DEPENDENCIES YET:
+       Current stack: Ridge Regression (scikit-learn or manual)
+       Future stack: Add NumPyro or TFP for lightweight VI when ready
     """
 
     def __init__(self):
@@ -194,6 +235,26 @@ class MMMDataLoader:
 
         Returns:
             dict: Prior parameters for beta distribution
+        
+        FUTURE BAYESIAN INTEGRATION POINT:
+        ----------------------------------
+        This method converts point estimates to Beta priors using method of moments.
+        When a Bayesian layer is added, this should be extended to:
+        
+        1. Return full posterior uncertainty from Bayesian regression:
+           # if self.bayesian_posterior is not None:
+           #     posterior = self.bayesian_posterior.get(arm_key)
+           #     return {
+           #         'alpha': ..., 'beta': ...,
+           #         'coefficient_posterior': posterior,
+           #         'credible_interval_95': posterior.hdi(0.95),
+           #         'uncertainty_source': 'bayesian_vi'  # vs 'method_of_moments'
+           #     }
+        
+        2. Incorporate incrementality priors when available:
+           # if arm_key in self.incrementality_priors:
+           #     inc_prior = self.incrementality_priors[arm_key]
+           #     return self._combine_priors(historical_prior, inc_prior)
         """
         # Create key from arm attributes
         platform = arm.platform.lower().replace(' ', '_')
