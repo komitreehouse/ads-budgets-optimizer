@@ -221,12 +221,13 @@ class DataScheduler:
 _scheduler: Optional[DataScheduler] = None
 
 
-def get_scheduler(timezone: str = 'UTC') -> DataScheduler:
+def get_scheduler(timezone: str = 'UTC', register_incrementality_jobs: bool = True) -> DataScheduler:
     """
     Get or create the global scheduler instance.
     
     Args:
         timezone: Timezone for scheduling (only used on first call)
+        register_incrementality_jobs: Whether to register incrementality jobs (only used on first call)
     
     Returns:
         DataScheduler instance
@@ -234,4 +235,12 @@ def get_scheduler(timezone: str = 'UTC') -> DataScheduler:
     global _scheduler
     if _scheduler is None:
         _scheduler = DataScheduler(timezone)
+        
+        if register_incrementality_jobs:
+            try:
+                from src.bandit_ads.incrementality_jobs import register_incrementality_jobs
+                register_incrementality_jobs(_scheduler)
+            except ImportError as e:
+                logger.warning(f"Could not register incrementality jobs: {e}")
+    
     return _scheduler

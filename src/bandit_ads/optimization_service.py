@@ -16,8 +16,10 @@ from src.bandit_ads.runner import AdOptimizationRunner, create_sample_campaign_c
 from src.bandit_ads.database import get_db_manager
 from src.bandit_ads.db_helpers import (
     get_campaign, get_arms_by_campaign, 
-    get_agent_state, update_agent_state
+    get_agent_state, update_agent_state,
+    get_experiments_by_campaign, record_incrementality_metric
 )
+from src.bandit_ads.agent import IncrementalityAwareBandit
 from src.bandit_ads.utils import get_logger, ConfigManager
 from src.bandit_ads.scheduler import get_scheduler
 
@@ -359,6 +361,10 @@ class ContinuousOptimizationService:
             else:
                 runner.agent.update(arm, result)
             
+            # Track holdout metrics for IncrementalityAwareBandit
+            if isinstance(runner.agent, IncrementalityAwareBandit):
+                self._record_holdout_metrics(campaign_id, runner, result, impressions)
+            
             # Save agent state periodically (every 10 optimizations)
             with self.lock:
                 opt_count = self.active_campaigns.get(campaign_id, {}).get('optimization_count', 0)
@@ -370,6 +376,81 @@ class ContinuousOptimizationService:
         except Exception as e:
             logger.error(f"Error in optimization step for campaign {campaign_id}: {str(e)}")
             return False
+    
+    def _record_holdout_metrics(self, campaign_id: int, runner: AdOptimizationRunner, 
+                                 result: dict, impressions: int):
+        """
+        Record holdout and treatment metrics for incrementality experiments.
+        
+        Automatically records metrics to running incrementality experiments
+        when using IncrementalityAwareBandit.
+        
+        Args:
+            campaign_id: Campaign ID
+            runner: AdOptimizationRunner instance
+            result: Result from environment step
+            impressions: Number of impressions in this round
+        """
+        try:
+            agent = runner.agent
+            if not isinstance(agent, IncrementalityAwareBandit):
+                return
+            
+            # Get running experiments for this campaign
+            experiments = get_experiments_by_campaign(campaign_id, status='running')
+            if not experiments:
+                return
+            
+            holdout_pct = agent.holdout_percentage
+            
+            # Calculate holdout (control) metrics - no ad spend, organic only
+            # These represent users who were not shown ads
+            holdout_users = int(impressions * holdout_pct)
+            holdout_cvr = agent.holdout_arm.get_baseline_cvr() if agent.holdout_arm.organic_users > 0 else 0.02
+            holdout_conversions = int(holdout_users * holdout_cvr)
+            holdout_revenue = holdout_conversions * result.get('revenue_per_conversion', 50.0)
+            
+            # Treatment metrics from the actual optimization
+            treatment_users = impressions - holdout_users
+            treatment_conversions = result.get('conversions', 0)
+            treatment_revenue = result.get('revenue', 0)
+            treatment_spend = result.get('spend', 0)
+            treatment_clicks = result.get('clicks', 0)
+            
+            # Record to agent's holdout arm
+            agent.record_holdout_metrics(
+                users=holdout_users,
+                conversions=holdout_conversions,
+                revenue=holdout_revenue
+            )
+            
+            # Record to database for each running experiment
+            from datetime import datetime
+            now = datetime.utcnow()
+            
+            for experiment in experiments:
+                try:
+                    record_incrementality_metric(
+                        experiment_id=experiment.id,
+                        date=now,
+                        treatment_users=treatment_users,
+                        treatment_impressions=treatment_users,  # Simplification: users ≈ impressions
+                        treatment_clicks=treatment_clicks,
+                        treatment_conversions=treatment_conversions,
+                        treatment_revenue=treatment_revenue,
+                        treatment_spend=treatment_spend,
+                        control_users=holdout_users,
+                        control_conversions=holdout_conversions,
+                        control_revenue=holdout_revenue
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to record metric for experiment {experiment.id}: {e}")
+            
+            logger.debug(f"Recorded holdout metrics for campaign {campaign_id}: "
+                        f"treatment={treatment_users} users, control={holdout_users} users")
+                        
+        except Exception as e:
+            logger.warning(f"Error recording holdout metrics for campaign {campaign_id}: {e}")
     
     def _save_agent_state(self, runner: AdOptimizationRunner, campaign_id: int):
         """Save agent state to database."""

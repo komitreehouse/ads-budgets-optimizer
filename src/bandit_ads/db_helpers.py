@@ -747,3 +747,46 @@ def calculate_experiment_results(experiment_id: int) -> Optional[Dict[str, Any]]
             'treatment_spend': total_treatment_spend,
             'roas_inflation': roas_result['roas_inflation']
         }
+
+
+def get_expired_experiments() -> List['IncrementalityExperiment']:
+    """
+    Get all running experiments whose end_date has passed.
+    Used by the background job to auto-complete experiments.
+    
+    Returns:
+        List of experiments that should be completed
+    """
+    from src.bandit_ads.database import IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        now = datetime.utcnow()
+        return session.query(IncrementalityExperiment).filter(
+            and_(
+                IncrementalityExperiment.status == 'running',
+                IncrementalityExperiment.end_date <= now
+            )
+        ).all()
+
+
+def auto_complete_experiment(experiment_id: int) -> bool:
+    """
+    Auto-complete an experiment by calculating final results.
+    
+    Args:
+        experiment_id: Experiment to complete
+    
+    Returns:
+        True if successful
+    """
+    try:
+        results = calculate_experiment_results(experiment_id)
+        if not results:
+            logger.warning(f"No metrics found for experiment {experiment_id}, marking as completed with no data")
+            return update_experiment_status(experiment_id, 'completed')
+        
+        return update_experiment_results(experiment_id, **results)
+    except Exception as e:
+        logger.error(f"Error auto-completing experiment {experiment_id}: {e}")
+        return False

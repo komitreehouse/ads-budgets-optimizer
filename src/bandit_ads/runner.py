@@ -17,7 +17,7 @@ sys.path.insert(0, str(project_root))
 
 from src.bandit_ads.arms import ArmManager
 from src.bandit_ads.env import AdEnvironment
-from src.bandit_ads.agent import ThompsonSamplingAgent
+from src.bandit_ads.agent import ThompsonSamplingAgent, IncrementalityAwareBandit
 from src.bandit_ads.contextual_agent import ContextualBanditAgent
 from src.bandit_ads.data_loader import MMMDataLoader
 from src.bandit_ads.utils import (
@@ -131,10 +131,13 @@ class AdOptimizationRunner:
             mmm_factors=mmm_factors
         )
 
-        # Set up agent (contextual or standard)
+        # Set up agent (contextual, incrementality-aware, or standard)
         agent_config = self.config.get('agent', {})
         contextual_config = self.config.get('contextual', {})
+        incrementality_config = self.config.get('incrementality', {})
+        
         use_contextual = contextual_config.get('enabled', False)
+        use_incrementality = incrementality_config.get('enabled', True)  # Default to True
         
         if use_contextual:
             # Use contextual bandit agent
@@ -149,6 +152,18 @@ class AdOptimizationRunner:
                 context_config=context_config,
                 alpha=contextual_config.get('alpha', 1.0)
             )
+        elif use_incrementality:
+            # Use incrementality-aware bandit agent (default)
+            holdout_percentage = incrementality_config.get('holdout_percentage', 0.10)
+            self.logger.info(f"Using Incrementality-Aware Bandit Agent (holdout: {holdout_percentage*100}%)")
+            self.agent = IncrementalityAwareBandit(
+                arms=arms,
+                total_budget=agent_config.get('total_budget', 1000.0),
+                holdout_percentage=holdout_percentage,
+                min_allocation=agent_config.get('min_allocation', 0.01),
+                risk_tolerance=agent_config.get('risk_tolerance', 0.3),
+                variance_limit=agent_config.get('variance_limit', 0.1)
+            )
         else:
             # Use standard Thompson Sampling agent
             self.logger.info("Using Standard Thompson Sampling Agent")
@@ -161,6 +176,7 @@ class AdOptimizationRunner:
             )
         
         self.use_contextual = use_contextual
+        self.use_incrementality = use_incrementality
 
         # Initialize agent priors with historical data if available
         if self.data_loader.historical_data:
