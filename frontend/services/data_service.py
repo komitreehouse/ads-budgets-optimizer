@@ -1778,3 +1778,309 @@ Would you like me to provide more specific details? Try asking:
             })
         
         return recommendations[:4]  # Limit to 4 recommendations
+    
+    # =========================================================================
+    # Incrementality Testing
+    # =========================================================================
+    
+    def get_incrementality_experiments(
+        self,
+        status: Optional[str] = None,
+        campaign_id: Optional[int] = None,
+        experiment_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get incrementality experiments."""
+        if self.use_mock:
+            return self._mock_incrementality_experiments(status, experiment_type)
+        
+        params = {}
+        if status:
+            params['status'] = status
+        if campaign_id:
+            params['campaign_id'] = campaign_id
+        if experiment_type:
+            params['experiment_type'] = experiment_type
+        
+        result = self._api_get("/api/incrementality/experiments", params=params)
+        if result:
+            return result
+        
+        return self._mock_incrementality_experiments(status, experiment_type)
+    
+    def get_experiment_details(self, experiment_id: int) -> Optional[Dict[str, Any]]:
+        """Get details for a specific experiment."""
+        if self.use_mock:
+            experiments = self._mock_incrementality_experiments()
+            return next((e for e in experiments if e['id'] == experiment_id), None)
+        
+        result = self._api_get(f"/api/incrementality/experiments/{experiment_id}")
+        if result:
+            return result
+        
+        experiments = self._mock_incrementality_experiments()
+        return next((e for e in experiments if e['id'] == experiment_id), None)
+    
+    def create_incrementality_experiment(
+        self,
+        campaign_id: int,
+        name: str,
+        experiment_type: str,
+        holdout_percentage: float = 0.10,
+        duration_days: int = 28,
+        treatment_markets: Optional[List[str]] = None,
+        control_markets: Optional[List[str]] = None,
+        platform: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Create a new incrementality experiment."""
+        if self.use_mock:
+            return {
+                'id': random.randint(100, 999),
+                'name': name,
+                'campaign_id': campaign_id,
+                'experiment_type': experiment_type,
+                'status': 'running',
+                'holdout_percentage': holdout_percentage,
+                'created': True
+            }
+        
+        payload = {
+            'campaign_id': campaign_id,
+            'name': name,
+            'experiment_type': experiment_type,
+            'holdout_percentage': holdout_percentage,
+            'duration_days': duration_days,
+            'treatment_markets': treatment_markets,
+            'control_markets': control_markets,
+            'platform': platform
+        }
+        
+        result = self._api_post("/api/incrementality/experiments", json=payload)
+        return result
+    
+    def apply_incrementality_to_bandit(
+        self,
+        experiment_id: int,
+        campaign_id: int
+    ) -> bool:
+        """Apply incrementality results to bandit priors."""
+        if self.use_mock:
+            return True
+        
+        payload = {
+            'experiment_id': experiment_id,
+            'campaign_id': campaign_id
+        }
+        
+        result = self._api_post("/api/incrementality/apply", json=payload)
+        return result is not None and result.get('success', False)
+    
+    def get_experiment_metrics(
+        self,
+        experiment_id: int
+    ) -> List[Dict[str, Any]]:
+        """Get daily metrics for an experiment."""
+        if self.use_mock:
+            return self._mock_experiment_metrics(experiment_id)
+        
+        result = self._api_get(f"/api/incrementality/experiments/{experiment_id}/metrics")
+        if result:
+            return result
+        
+        return self._mock_experiment_metrics(experiment_id)
+    
+    def _mock_incrementality_experiments(
+        self,
+        status: Optional[str] = None,
+        experiment_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Return mock incrementality experiments."""
+        experiments = [
+            {
+                'id': 1,
+                'name': 'Q1 2026 Holdout Test',
+                'campaign_id': 1,
+                'campaign': 'Brand Awareness',
+                'experiment_type': 'holdout',
+                'status': 'running',
+                'holdout_percentage': 0.10,
+                'start_date': '2026-01-15',
+                'end_date': '2026-02-12',
+                'duration_days': 28,
+                'days_running': 12,
+                'treatment_users': 145000,
+                'control_users': 16000,
+                'treatment_conversions': 0,
+                'control_conversions': 0,
+                'lift_percent': None,
+                'incremental_roas': None,
+                'observed_roas': None,
+                'confidence_interval': None,
+                'p_value': None,
+                'is_significant': None
+            },
+            {
+                'id': 2,
+                'name': 'West Coast Geo Test',
+                'campaign_id': 2,
+                'campaign': 'Performance Max',
+                'experiment_type': 'geo_lift',
+                'status': 'running',
+                'holdout_percentage': 0.0,
+                'start_date': '2026-01-20',
+                'end_date': '2026-02-17',
+                'duration_days': 28,
+                'days_running': 7,
+                'treatment_users': 89000,
+                'control_users': 45000,
+                'treatment_markets': ['NYC', 'LAX'],
+                'control_markets': ['BOS', 'SEA', 'DEN'],
+                'lift_percent': None,
+                'incremental_roas': None,
+                'observed_roas': None,
+                'confidence_interval': None,
+                'p_value': None,
+                'is_significant': None
+            },
+            {
+                'id': 3,
+                'name': 'Q4 2025 Meta Lift Study',
+                'campaign_id': 3,
+                'campaign': 'Holiday Promo',
+                'experiment_type': 'platform_native',
+                'status': 'completed',
+                'platform': 'meta',
+                'holdout_percentage': 0.10,
+                'start_date': '2025-11-01',
+                'end_date': '2025-11-28',
+                'duration_days': 28,
+                'days_running': 28,
+                'treatment_users': 250000,
+                'control_users': 28000,
+                'treatment_conversions': 12500,
+                'control_conversions': 980,
+                'treatment_revenue': 625000,
+                'control_revenue': 49000,
+                'treatment_spend': 150000,
+                'lift_percent': 42.5,
+                'incremental_roas': 2.87,
+                'observed_roas': 4.17,
+                'roas_inflation': 45.3,
+                'incremental_revenue': 430000,
+                'confidence_interval': (35.2, 49.8),
+                'p_value': 0.001,
+                'is_significant': True
+            },
+            {
+                'id': 4,
+                'name': 'Search Holdout Experiment',
+                'campaign_id': 4,
+                'campaign': 'Google Search',
+                'experiment_type': 'holdout',
+                'status': 'completed',
+                'holdout_percentage': 0.10,
+                'start_date': '2025-10-01',
+                'end_date': '2025-10-28',
+                'duration_days': 28,
+                'days_running': 28,
+                'treatment_users': 180000,
+                'control_users': 20000,
+                'treatment_conversions': 5400,
+                'control_conversions': 420,
+                'treatment_revenue': 270000,
+                'control_revenue': 21000,
+                'treatment_spend': 85000,
+                'lift_percent': 28.6,
+                'incremental_roas': 2.12,
+                'observed_roas': 3.18,
+                'roas_inflation': 50.0,
+                'incremental_revenue': 180000,
+                'confidence_interval': (18.4, 38.8),
+                'p_value': 0.003,
+                'is_significant': True
+            },
+            {
+                'id': 5,
+                'name': 'TTD Ghost Bid Test',
+                'campaign_id': 5,
+                'campaign': 'Programmatic Display',
+                'experiment_type': 'platform_native',
+                'status': 'completed',
+                'platform': 'ttd',
+                'holdout_percentage': 0.10,
+                'start_date': '2025-09-15',
+                'end_date': '2025-10-12',
+                'duration_days': 28,
+                'days_running': 28,
+                'treatment_users': 320000,
+                'control_users': 35000,
+                'treatment_conversions': 3200,
+                'control_conversions': 280,
+                'treatment_revenue': 160000,
+                'control_revenue': 14000,
+                'treatment_spend': 95000,
+                'lift_percent': 14.3,
+                'incremental_roas': 1.05,
+                'observed_roas': 1.68,
+                'roas_inflation': 60.0,
+                'incremental_revenue': 100000,
+                'confidence_interval': (-2.1, 30.7),
+                'p_value': 0.089,
+                'is_significant': False
+            }
+        ]
+        
+        # Filter by status
+        if status:
+            experiments = [e for e in experiments if e['status'] == status]
+        
+        # Filter by type
+        if experiment_type:
+            type_map = {
+                'holdout': 'holdout',
+                'geo-lift': 'geo_lift',
+                'geo_lift': 'geo_lift',
+                'platform native': 'platform_native',
+                'platform_native': 'platform_native'
+            }
+            normalized_type = type_map.get(experiment_type.lower(), experiment_type)
+            experiments = [e for e in experiments if e['experiment_type'] == normalized_type]
+        
+        return experiments
+    
+    def _mock_experiment_metrics(self, experiment_id: int) -> List[Dict[str, Any]]:
+        """Return mock daily metrics for an experiment."""
+        metrics = []
+        base_date = datetime.now() - timedelta(days=14)
+        
+        for i in range(14):
+            date = base_date + timedelta(days=i)
+            treatment_users = random.randint(8000, 12000)
+            control_users = random.randint(800, 1200)
+            
+            treatment_cvr = 0.03 + random.uniform(-0.005, 0.005)
+            control_cvr = 0.021 + random.uniform(-0.003, 0.003)
+            
+            treatment_conversions = int(treatment_users * treatment_cvr)
+            control_conversions = int(control_users * control_cvr)
+            
+            treatment_revenue = treatment_conversions * random.uniform(40, 60)
+            control_revenue = control_conversions * random.uniform(40, 60)
+            treatment_spend = random.uniform(4000, 6000)
+            
+            lift = (treatment_cvr - control_cvr) / control_cvr * 100 if control_cvr > 0 else 0
+            
+            metrics.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'treatment_users': treatment_users,
+                'control_users': control_users,
+                'treatment_conversions': treatment_conversions,
+                'control_conversions': control_conversions,
+                'treatment_revenue': treatment_revenue,
+                'control_revenue': control_revenue,
+                'treatment_spend': treatment_spend,
+                'treatment_cvr': treatment_cvr,
+                'control_cvr': control_cvr,
+                'daily_lift_percent': lift
+            })
+        
+        return metrics

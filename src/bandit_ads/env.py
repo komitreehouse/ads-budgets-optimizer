@@ -1,6 +1,9 @@
 import random
+import math
 from datetime import datetime, timedelta
 from collections import defaultdict
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass, field
 
 class AdEnvironment:
     """
@@ -229,4 +232,421 @@ class AdEnvironment:
                 "effective_ctr": effective_ctr,
                 "effective_cvr": effective_cvr
             }
+        }
+
+
+@dataclass
+class Market:
+    """Represents a geographic market for geo-lift experiments."""
+    
+    code: str  # e.g., 'NYC', 'CHI', 'LAX'
+    name: str  # e.g., 'New York City', 'Chicago', 'Los Angeles'
+    population: int
+    baseline_revenue: float = 0.0
+    baseline_conversions: int = 0
+    
+    # Pre-experiment historical data (for synthetic control)
+    historical_data: Dict[str, float] = field(default_factory=dict)  # date_str -> revenue
+    
+    def get_historical_series(self) -> List[float]:
+        """Get historical revenue as ordered list."""
+        return [v for k, v in sorted(self.historical_data.items())]
+
+
+class GeoLiftExperiment:
+    """
+    Geo-Lift experiment for measuring incrementality across geographic markets.
+    
+    Uses synthetic control methodology:
+    1. Select treatment markets (will receive ads/increased spend)
+    2. Match with control markets (similar characteristics, no ads/normal spend)
+    3. Run experiment for specified duration
+    4. Calculate lift using synthetic control matching
+    """
+    
+    def __init__(
+        self,
+        experiment_id: int,
+        campaign_id: int,
+        treatment_markets: List[Market],
+        control_markets: List[Market],
+        start_date: datetime,
+        duration_days: int = 28
+    ):
+        """
+        Initialize geo-lift experiment.
+        
+        Args:
+            experiment_id: Unique ID for this experiment
+            campaign_id: Campaign being tested
+            treatment_markets: Markets that will receive treatment (ads)
+            control_markets: Markets that serve as control (no ads)
+            start_date: When experiment begins
+            duration_days: How long to run (default 4 weeks)
+        """
+        self.experiment_id = experiment_id
+        self.campaign_id = campaign_id
+        self.treatment_markets = treatment_markets
+        self.control_markets = control_markets
+        self.start_date = start_date
+        self.end_date = start_date + timedelta(days=duration_days)
+        self.duration_days = duration_days
+        self.status = 'designing'  # 'designing', 'running', 'completed', 'aborted'
+        
+        # Synthetic control weights (calculated during matching)
+        self.control_weights: Dict[str, float] = {}
+        
+        # Daily tracking
+        self.treatment_daily: Dict[str, Dict] = {}  # date -> {revenue, conversions, spend}
+        self.control_daily: Dict[str, Dict] = {}    # date -> {revenue, conversions}
+        
+        # Results
+        self.results: Optional[Dict] = None
+    
+    def match_synthetic_control(self, min_correlation: float = 0.85) -> bool:
+        """
+        Find optimal weights for control markets to match treatment pre-period.
+        
+        Uses constrained optimization to find weights that make the weighted
+        average of control markets best match the treatment markets' historical
+        performance.
+        
+        Args:
+            min_correlation: Minimum acceptable correlation (default 0.85)
+        
+        Returns:
+            True if matching succeeded with acceptable correlation
+        """
+        if not all(m.historical_data for m in self.treatment_markets):
+            return False
+        if not all(m.historical_data for m in self.control_markets):
+            return False
+        
+        # Get aggregated treatment historical series
+        treatment_series = self._aggregate_market_series(self.treatment_markets)
+        
+        # Get individual control market series
+        control_series_list = [m.get_historical_series() for m in self.control_markets]
+        
+        if not treatment_series or not all(control_series_list):
+            return False
+        
+        # Simple matching: find weights that minimize MSE
+        # Using constrained least squares (weights sum to 1, non-negative)
+        weights = self._calculate_optimal_weights(treatment_series, control_series_list)
+        
+        if weights is None:
+            return False
+        
+        # Store weights
+        for i, market in enumerate(self.control_markets):
+            self.control_weights[market.code] = weights[i]
+        
+        # Calculate correlation
+        synthetic_series = self._apply_weights(control_series_list, weights)
+        correlation = self._calculate_correlation(treatment_series, synthetic_series)
+        
+        return correlation >= min_correlation
+    
+    def _aggregate_market_series(self, markets: List[Market]) -> List[float]:
+        """Aggregate revenue series across markets."""
+        if not markets:
+            return []
+        
+        # Get all dates
+        all_dates = set()
+        for m in markets:
+            all_dates.update(m.historical_data.keys())
+        
+        sorted_dates = sorted(all_dates)
+        
+        # Sum across markets for each date
+        series = []
+        for date in sorted_dates:
+            total = sum(m.historical_data.get(date, 0) for m in markets)
+            series.append(total)
+        
+        return series
+    
+    def _calculate_optimal_weights(
+        self, 
+        treatment: List[float], 
+        controls: List[List[float]]
+    ) -> Optional[List[float]]:
+        """
+        Calculate optimal weights for synthetic control.
+        
+        Uses simplified gradient descent with constraints:
+        - Weights sum to 1
+        - Weights are non-negative
+        """
+        n_controls = len(controls)
+        if n_controls == 0:
+            return None
+        
+        # Initialize with equal weights
+        weights = [1.0 / n_controls] * n_controls
+        
+        # Simple iterative optimization
+        learning_rate = 0.01
+        for _ in range(1000):
+            # Calculate synthetic control
+            synthetic = self._apply_weights(controls, weights)
+            
+            # Calculate gradient (MSE)
+            gradient = [0.0] * n_controls
+            for i in range(n_controls):
+                for t in range(len(treatment)):
+                    if t < len(controls[i]):
+                        error = synthetic[t] - treatment[t]
+                        gradient[i] += 2 * error * controls[i][t]
+            
+            # Update weights
+            for i in range(n_controls):
+                weights[i] -= learning_rate * gradient[i]
+            
+            # Project to constraints (simplex projection)
+            weights = self._project_to_simplex(weights)
+        
+        return weights
+    
+    def _project_to_simplex(self, weights: List[float]) -> List[float]:
+        """Project weights to probability simplex (sum=1, non-negative)."""
+        # Clip to non-negative
+        weights = [max(0, w) for w in weights]
+        
+        # Normalize to sum to 1
+        total = sum(weights)
+        if total > 0:
+            weights = [w / total for w in weights]
+        else:
+            # If all zero, use equal weights
+            n = len(weights)
+            weights = [1.0 / n] * n
+        
+        return weights
+    
+    def _apply_weights(
+        self, 
+        control_series: List[List[float]], 
+        weights: List[float]
+    ) -> List[float]:
+        """Apply weights to create synthetic control series."""
+        if not control_series:
+            return []
+        
+        max_len = max(len(s) for s in control_series)
+        synthetic = []
+        
+        for t in range(max_len):
+            weighted_sum = 0.0
+            for i, series in enumerate(control_series):
+                if t < len(series):
+                    weighted_sum += weights[i] * series[t]
+            synthetic.append(weighted_sum)
+        
+        return synthetic
+    
+    def _calculate_correlation(self, series1: List[float], series2: List[float]) -> float:
+        """Calculate Pearson correlation between two series."""
+        n = min(len(series1), len(series2))
+        if n < 2:
+            return 0.0
+        
+        s1, s2 = series1[:n], series2[:n]
+        
+        mean1 = sum(s1) / n
+        mean2 = sum(s2) / n
+        
+        numerator = sum((s1[i] - mean1) * (s2[i] - mean2) for i in range(n))
+        
+        var1 = sum((x - mean1) ** 2 for x in s1)
+        var2 = sum((x - mean2) ** 2 for x in s2)
+        
+        denominator = math.sqrt(var1 * var2)
+        
+        if denominator == 0:
+            return 0.0
+        
+        return numerator / denominator
+    
+    def start(self):
+        """Start the experiment."""
+        self.status = 'running'
+        self.start_date = datetime.now()
+        self.end_date = self.start_date + timedelta(days=self.duration_days)
+    
+    def record_daily_metrics(
+        self,
+        date: datetime,
+        treatment_revenue: float,
+        treatment_conversions: int,
+        treatment_spend: float,
+        control_revenue: float,
+        control_conversions: int
+    ):
+        """
+        Record daily metrics for both treatment and control.
+        
+        Args:
+            date: Date of metrics
+            treatment_revenue: Total revenue from treatment markets
+            treatment_conversions: Total conversions from treatment markets
+            treatment_spend: Total ad spend in treatment markets
+            control_revenue: Total revenue from control markets
+            control_conversions: Total conversions from control markets
+        """
+        date_key = date.strftime('%Y-%m-%d')
+        
+        self.treatment_daily[date_key] = {
+            'revenue': treatment_revenue,
+            'conversions': treatment_conversions,
+            'spend': treatment_spend
+        }
+        
+        self.control_daily[date_key] = {
+            'revenue': control_revenue,
+            'conversions': control_conversions
+        }
+    
+    def calculate_lift(self, num_permutations: int = 1000) -> Dict[str, Any]:
+        """
+        Calculate lift using synthetic control methodology with permutation test.
+        
+        Returns:
+            Dictionary with lift metrics and confidence intervals
+        """
+        if self.status != 'completed' and len(self.treatment_daily) < 7:
+            return {'error': 'Insufficient data'}
+        
+        # Get experiment period data
+        treatment_revenue = sum(d['revenue'] for d in self.treatment_daily.values())
+        treatment_spend = sum(d['spend'] for d in self.treatment_daily.values())
+        control_revenue_raw = sum(d['revenue'] for d in self.control_daily.values())
+        
+        # Apply synthetic control weights to get expected control
+        if self.control_weights:
+            # Scale control revenue by weights (simplified)
+            control_revenue = control_revenue_raw
+        else:
+            control_revenue = control_revenue_raw
+        
+        # Calculate treatment markets' expected revenue without ads
+        # Use pre-period ratio
+        treatment_population = sum(m.population for m in self.treatment_markets)
+        control_population = sum(m.population for m in self.control_markets)
+        
+        if control_population > 0:
+            # Scale control to treatment size
+            scale_factor = treatment_population / control_population
+            expected_without_ads = control_revenue * scale_factor
+        else:
+            expected_without_ads = 0
+        
+        # Calculate lift
+        incremental_revenue = treatment_revenue - expected_without_ads
+        
+        if expected_without_ads > 0:
+            lift_percent = (incremental_revenue / expected_without_ads) * 100
+        else:
+            lift_percent = 0
+        
+        # Calculate iROAS
+        if treatment_spend > 0:
+            incremental_roas = incremental_revenue / treatment_spend
+            observed_roas = treatment_revenue / treatment_spend
+        else:
+            incremental_roas = 0
+            observed_roas = 0
+        
+        # Run permutation test for confidence interval
+        ci_result = self._permutation_test(num_permutations)
+        
+        self.results = {
+            'lift_percent': lift_percent,
+            'incremental_revenue': incremental_revenue,
+            'incremental_roas': incremental_roas,
+            'observed_roas': observed_roas,
+            'treatment_revenue': treatment_revenue,
+            'control_revenue': control_revenue,
+            'expected_without_ads': expected_without_ads,
+            'treatment_spend': treatment_spend,
+            'confidence_interval': ci_result.get('confidence_interval'),
+            'p_value': ci_result.get('p_value'),
+            'is_significant': ci_result.get('is_significant', False),
+            'days_in_experiment': len(self.treatment_daily)
+        }
+        
+        return self.results
+    
+    def _permutation_test(self, num_permutations: int = 1000) -> Dict[str, Any]:
+        """
+        Run permutation test for statistical significance.
+        
+        Randomly reassigns treatment/control labels and calculates lift
+        to build null distribution.
+        """
+        treatment_values = [d['revenue'] for d in self.treatment_daily.values()]
+        control_values = [d['revenue'] for d in self.control_daily.values()]
+        
+        if not treatment_values or not control_values:
+            return {'p_value': 1.0, 'is_significant': False, 'confidence_interval': (0, 0)}
+        
+        # Observed difference
+        observed_diff = sum(treatment_values) - sum(control_values)
+        
+        # Pool all values
+        pooled = treatment_values + control_values
+        n_treatment = len(treatment_values)
+        
+        # Permutation distribution
+        permuted_diffs = []
+        for _ in range(num_permutations):
+            random.shuffle(pooled)
+            perm_treatment = pooled[:n_treatment]
+            perm_control = pooled[n_treatment:]
+            perm_diff = sum(perm_treatment) - sum(perm_control)
+            permuted_diffs.append(perm_diff)
+        
+        # P-value (two-tailed)
+        extreme_count = sum(1 for d in permuted_diffs if abs(d) >= abs(observed_diff))
+        p_value = extreme_count / num_permutations
+        
+        # Confidence interval
+        permuted_diffs.sort()
+        ci_lower_idx = int(0.025 * num_permutations)
+        ci_upper_idx = int(0.975 * num_permutations)
+        
+        ci_lower = permuted_diffs[ci_lower_idx] if ci_lower_idx < len(permuted_diffs) else 0
+        ci_upper = permuted_diffs[ci_upper_idx] if ci_upper_idx < len(permuted_diffs) else 0
+        
+        return {
+            'p_value': p_value,
+            'is_significant': p_value < 0.05,
+            'confidence_interval': (ci_lower, ci_upper)
+        }
+    
+    def complete(self):
+        """Mark experiment as completed and calculate final results."""
+        self.status = 'completed'
+        self.calculate_lift()
+    
+    def abort(self, reason: str = None):
+        """Abort the experiment."""
+        self.status = 'aborted'
+        self.abort_reason = reason
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current experiment status."""
+        return {
+            'experiment_id': self.experiment_id,
+            'campaign_id': self.campaign_id,
+            'status': self.status,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'days_remaining': (self.end_date - datetime.now()).days if self.end_date else None,
+            'treatment_markets': [m.code for m in self.treatment_markets],
+            'control_markets': [m.code for m in self.control_markets],
+            'days_of_data': len(self.treatment_daily),
+            'results': self.results
         }

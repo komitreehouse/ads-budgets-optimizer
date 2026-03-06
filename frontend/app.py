@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # Import pages after config
-from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding
+from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding, incrementality
 from frontend.components.chat_widget import render_chat_widget
 
 # Custom CSS for IPSA brand styling
@@ -49,6 +49,17 @@ def load_custom_css():
     /* Global font settings */
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--foreground);
+    }
+    
+    /* Ensure all text is dark on light backgrounds */
+    p, span, div, label, .stMarkdown, [data-testid="stMarkdownContainer"] {
+        color: var(--foreground) !important;
+    }
+    
+    /* Headers should be dark */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--foreground) !important;
     }
     
     /* Headings use Radley */
@@ -173,14 +184,29 @@ def load_custom_css():
     
     .chat-message-user {
         background: var(--primary);
-        color: white;
+        color: white !important;
         margin-left: 20%;
+    }
+    
+    .chat-message-user p, .chat-message-user span, .chat-message-user div {
+        color: white !important;
     }
     
     .chat-message-assistant {
         background: var(--muted-bg);
         color: var(--foreground);
         margin-right: 20%;
+    }
+    
+    /* Streamlit chat message styling */
+    [data-testid="stChatMessage"] {
+        background-color: var(--card-bg);
+        border: 1px solid var(--muted-bg);
+        border-radius: 12px;
+    }
+    
+    [data-testid="stChatMessage"] p {
+        color: var(--foreground) !important;
     }
     
     /* Recommendation card */
@@ -202,6 +228,7 @@ def load_custom_css():
         border-radius: 8px;
         font-weight: 500;
         font-family: 'Inter', sans-serif;
+        color: var(--foreground);
     }
     
     .stButton > button[kind="primary"], 
@@ -209,6 +236,11 @@ def load_custom_css():
         background-color: var(--primary) !important;
         color: white !important;
         border: none !important;
+    }
+    
+    .stButton > button[kind="primary"] p,
+    .stButton > button[data-testid="baseButton-primary"] p {
+        color: white !important;
     }
     
     .stButton > button[kind="primary"]:hover,
@@ -224,9 +256,19 @@ def load_custom_css():
         border: 1px solid var(--muted-bg) !important;
     }
     
+    .stButton > button[kind="secondary"] p,
+    .stButton > button[data-testid="baseButton-secondary"] p {
+        color: var(--foreground) !important;
+    }
+    
     .stButton > button[kind="secondary"]:hover,
     .stButton > button[data-testid="baseButton-secondary"]:hover {
         background-color: var(--muted-bg) !important;
+    }
+    
+    /* Default button text color (for tertiary/default buttons) */
+    .stButton > button p {
+        color: var(--foreground) !important;
     }
     
     /* Navigation styling */
@@ -295,12 +337,27 @@ def load_custom_css():
         background-color: var(--card-bg);
         border: 1px solid var(--muted-bg);
         border-radius: 8px;
+        color: var(--foreground) !important;
+    }
+    
+    .stTextInput > div > div > input::placeholder {
+        color: var(--muted-fg) !important;
     }
     
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div > div:focus {
         border-color: var(--primary);
         box-shadow: 0 0 0 2px rgba(155, 72, 25, 0.1);
+    }
+    
+    /* Selectbox text */
+    .stSelectbox [data-baseweb="select"] span {
+        color: var(--foreground) !important;
+    }
+    
+    /* Labels for inputs */
+    .stTextInput label, .stSelectbox label, .stNumberInput label {
+        color: var(--foreground) !important;
     }
     
     /* File uploader */
@@ -368,17 +425,25 @@ def load_custom_css():
     
     .progress-step-active {
         background: var(--primary);
-        color: white;
+        color: white !important;
+    }
+    
+    .progress-step-active span, .progress-step-active p {
+        color: white !important;
     }
     
     .progress-step-complete {
         background: var(--success);
-        color: white;
+        color: white !important;
+    }
+    
+    .progress-step-complete span, .progress-step-complete p {
+        color: white !important;
     }
     
     .progress-step-pending {
         background: var(--muted-bg);
-        color: var(--muted-fg);
+        color: var(--muted-fg) !important;
     }
     
     /* Slider */
@@ -430,6 +495,7 @@ def render_sidebar():
             "🏠 Home": "home",
             "📊 Campaigns": "campaigns",
             "🤖 Optimizer": "optimizer",
+            "📈 Incrementality": "incrementality",
             "💬 Ask": "ask",
             "✓ Recommendations": "recommendations",
         }
@@ -560,6 +626,8 @@ def main():
         campaign_detail.render(st.session_state.get("selected_campaign_id"))
     elif current_page == "optimizer":
         optimizer.render()
+    elif current_page == "incrementality":
+        incrementality.render()
     elif current_page == "ask":
         ask.render()
     elif current_page == "recommendations":

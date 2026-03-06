@@ -160,6 +160,120 @@ class APILog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
 
 
+class IncrementalityExperiment(Base):
+    """
+    Tracks incrementality experiments for measuring true ad lift.
+    
+    Supports three experiment types:
+    - 'holdout': Automated holdout groups (10% control)
+    - 'geo_lift': Geographic market experiments
+    - 'platform_native': Platform-native studies (Meta Conversion Lift, etc.)
+    """
+    __tablename__ = 'incrementality_experiments'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    campaign_id = Column(Integer, ForeignKey('campaigns.id'), nullable=False)
+    
+    # Experiment configuration
+    name = Column(String(255), nullable=False)
+    experiment_type = Column(String(50), nullable=False)  # 'holdout', 'geo_lift', 'platform_native'
+    holdout_percentage = Column(Float, default=0.10)  # 10% default
+    
+    # Geographic settings (for geo-lift experiments)
+    treatment_markets = Column(Text, nullable=True)  # JSON array of market codes
+    control_markets = Column(Text, nullable=True)    # JSON array of market codes
+    
+    # Platform-native settings
+    platform = Column(String(50), nullable=True)  # 'google', 'meta', 'ttd'
+    platform_study_id = Column(String(255), nullable=True)  # External study ID
+    
+    # Timing
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=True)
+    status = Column(String(50), default='designing')  # 'designing', 'running', 'completed', 'aborted'
+    
+    # Results
+    lift_percent = Column(Float, nullable=True)
+    confidence_lower = Column(Float, nullable=True)
+    confidence_upper = Column(Float, nullable=True)
+    p_value = Column(Float, nullable=True)
+    is_significant = Column(Boolean, nullable=True)
+    
+    # Incremental metrics
+    incremental_roas = Column(Float, nullable=True)
+    observed_roas = Column(Float, nullable=True)
+    incremental_revenue = Column(Float, nullable=True)
+    incremental_conversions = Column(Integer, nullable=True)
+    
+    # Sample sizes
+    treatment_users = Column(Integer, default=0)
+    control_users = Column(Integer, default=0)
+    treatment_conversions = Column(Integer, default=0)
+    control_conversions = Column(Integer, default=0)
+    treatment_revenue = Column(Float, default=0.0)
+    control_revenue = Column(Float, default=0.0)
+    treatment_spend = Column(Float, default=0.0)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    notes = Column(Text, nullable=True)
+    
+    # Relationships
+    campaign = relationship("Campaign", backref="incrementality_experiments")
+    metrics = relationship("IncrementalityMetric", back_populates="experiment", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"IncrementalityExperiment(id={self.id}, name='{self.name}', type={self.experiment_type}, status={self.status})"
+
+
+class IncrementalityMetric(Base):
+    """
+    Daily metrics for incrementality experiments.
+    
+    Tracks treatment vs control group performance over time.
+    """
+    __tablename__ = 'incrementality_metrics'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    experiment_id = Column(Integer, ForeignKey('incrementality_experiments.id'), nullable=False)
+    date = Column(DateTime, nullable=False, index=True)
+    
+    # Treatment group (saw ads)
+    treatment_users = Column(Integer, default=0)
+    treatment_impressions = Column(Integer, default=0)
+    treatment_clicks = Column(Integer, default=0)
+    treatment_conversions = Column(Integer, default=0)
+    treatment_revenue = Column(Float, default=0.0)
+    treatment_spend = Column(Float, default=0.0)
+    
+    # Control group (no ads / holdout)
+    control_users = Column(Integer, default=0)
+    control_conversions = Column(Integer, default=0)
+    control_revenue = Column(Float, default=0.0)
+    # control_spend is 0 by definition
+    
+    # Calculated metrics (stored for quick access)
+    treatment_cvr = Column(Float, default=0.0)
+    control_cvr = Column(Float, default=0.0)
+    daily_lift_percent = Column(Float, nullable=True)
+    daily_incremental_roas = Column(Float, nullable=True)
+    
+    # Cumulative metrics (running totals)
+    cumulative_treatment_users = Column(Integer, default=0)
+    cumulative_control_users = Column(Integer, default=0)
+    cumulative_lift_percent = Column(Float, nullable=True)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    experiment = relationship("IncrementalityExperiment", back_populates="metrics")
+    
+    def __repr__(self):
+        return f"IncrementalityMetric(experiment_id={self.experiment_id}, date={self.date}, lift={self.daily_lift_percent}%)"
+
+
 class DatabaseManager:
     """Manages database connections and operations."""
     

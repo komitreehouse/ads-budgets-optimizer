@@ -110,32 +110,41 @@ def render(greeting: str):
     with chart_col:
         st.markdown("##### Budget Allocation by Channel")
         
-        # Create pie chart
-        fig = go.Figure(data=[go.Pie(
-            labels=[c['name'] for c in channel_data],
-            values=[c['budget'] for c in channel_data],
-            hole=0.4,
-            marker=dict(colors=[c['color'] for c in channel_data]),
-            textinfo='percent+label',
-            textposition='outside',
-            hovertemplate="<b>%{label}</b><br>" +
-                         "Budget: $%{value:,.0f}<br>" +
-                         "Allocation: %{percent}<extra></extra>"
-        )])
-        
-        fig.update_layout(
-            showlegend=False,
-            margin=dict(t=20, b=20, l=20, r=20),
-            height=350,
-            annotations=[dict(
-                text=f"${budget_data['total_budget']/1000:.0f}K",
-                x=0.5, y=0.5,
-                font_size=20,
-                showarrow=False
-            )]
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        # Wrap chart in a card container
+        with st.container():
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            
+            # Create pie chart
+            fig = go.Figure(data=[go.Pie(
+                labels=[c['name'] for c in channel_data],
+                values=[c['budget'] for c in channel_data],
+                hole=0.4,
+                marker=dict(colors=[c['color'] for c in channel_data]),
+                textinfo='percent+label',
+                textposition='outside',
+                hovertemplate="<b>%{label}</b><br>" +
+                             "Budget: $%{value:,.0f}<br>" +
+                             "Allocation: %{percent}<extra></extra>"
+            )])
+            
+            fig.update_layout(
+                showlegend=False,
+                margin=dict(t=20, b=20, l=20, r=20),
+                height=350,
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(color='#1a1a1a'),
+                annotations=[dict(
+                    text=f"${budget_data['total_budget']/1000:.0f}K",
+                    x=0.5, y=0.5,
+                    font_size=20,
+                    font_color='#1a1a1a',
+                    showarrow=False
+                )]
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
     
     with splits_col:
         st.markdown("##### Channel Performance")
@@ -382,6 +391,8 @@ def render_channel_drilldown(data_service: DataService, channel_id: str, time_ra
         
         # Campaign allocation pie chart
         if campaigns:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            
             fig = go.Figure(data=[go.Pie(
                 labels=[c['name'] for c in campaigns],
                 values=[c['spent'] for c in campaigns],
@@ -395,12 +406,16 @@ def render_channel_drilldown(data_service: DataService, channel_id: str, time_ra
             
             fig.update_layout(
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=-0.2),
+                legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(color='#1a1a1a')),
                 margin=dict(t=10, b=60, l=10, r=10),
-                height=250
+                height=250,
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(color='#1a1a1a')
             )
             
             st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # Campaign details table
         st.markdown("##### Campaign Details")

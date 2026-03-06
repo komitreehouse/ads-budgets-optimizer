@@ -67,7 +67,7 @@ def render_dual_axis_chart(
         x=df[x_key],
         y=df[left_y_key],
         name=left_label,
-        line=dict(color='#7C3AED', width=2),
+        line=dict(color='#9b4819', width=2),
         yaxis='y'
     ))
     
@@ -89,7 +89,7 @@ def render_dual_axis_chart(
             x=df[x_key],
             y=df[f'{left_y_key}_rolling'],
             name=f'{left_label} (Avg)',
-            line=dict(color='#A78BFA', width=1.5, dash='dash'),
+            line=dict(color='#bd8f53', width=1.5, dash='dash'),
             yaxis='y'
         ))
         
@@ -139,15 +139,17 @@ def render_dual_axis_chart(
         xaxis=dict(
             title="Date",
             showgrid=True,
-            gridcolor='#E5E5E5'
+            gridcolor='#E5E5E5',
+            titlefont=dict(color='#1a1a1a'),
+            tickfont=dict(color='#1a1a1a')
         ),
         yaxis=dict(
             title=left_label,
             side='left',
             showgrid=True,
             gridcolor='#E5E5E5',
-            titlefont=dict(color='#7C3AED'),
-            tickfont=dict(color='#7C3AED')
+            titlefont=dict(color='#9b4819'),
+            tickfont=dict(color='#9b4819')
         ),
         yaxis2=dict(
             title=right_label,
@@ -157,18 +159,24 @@ def render_dual_axis_chart(
             titlefont=dict(color='#22C55E'),
             tickfont=dict(color='#22C55E')
         ),
+        paper_bgcolor='white',
         plot_bgcolor='white',
+        font=dict(color='#1a1a1a'),
         hovermode='x unified',
         legend=dict(
             orientation='h',
             yanchor='bottom',
             y=1.02,
             xanchor='right',
-            x=1
+            x=1,
+            font=dict(color='#1a1a1a')
         )
     )
     
+    # Wrap chart in a card
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def detect_anomalies(

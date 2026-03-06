@@ -51,7 +51,7 @@ def render_time_series_chart(
     x_key: str,
     y_key: str,
     title: str = None,
-    color: str = "#7C3AED",
+    color: str = "#9b4819",
     height: int = 300
 ):
     """
@@ -84,24 +84,30 @@ def render_time_series_chart(
     ))
     
     fig.update_layout(
-        title=title,
+        title=dict(text=title, font=dict(color='#1a1a1a')) if title else None,
         margin=dict(l=40, r=20, t=40 if title else 20, b=40),
         height=height,
         xaxis=dict(
             showgrid=False,
             showline=True,
-            linecolor='#E5E5E5'
+            linecolor='#E5E5E5',
+            tickfont=dict(color='#1a1a1a')
         ),
         yaxis=dict(
             showgrid=True,
             gridcolor='#E5E5E5',
-            showline=False
+            showline=False,
+            tickfont=dict(color='#1a1a1a')
         ),
+        paper_bgcolor='white',
         plot_bgcolor='white',
+        font=dict(color='#1a1a1a'),
         hovermode='x unified'
     )
     
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_pie_chart(
@@ -131,7 +137,7 @@ def render_pie_chart(
     values = [d[value_key] for d in data]
     
     if colors is None:
-        colors = ['#7C3AED', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE', '#F5F3FF']
+        colors = ['#9b4819', '#bd8f53', '#22C55E', '#3B82F6', '#F59E0B', '#EF4444']
     
     fig = go.Figure(data=[go.Pie(
         labels=labels,
@@ -144,13 +150,18 @@ def render_pie_chart(
     )])
     
     fig.update_layout(
-        title=title,
+        title=dict(text=title, font=dict(color='#1a1a1a')) if title else None,
         margin=dict(l=20, r=20, t=40 if title else 20, b=20),
         height=height,
-        showlegend=False
+        showlegend=False,
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        font=dict(color='#1a1a1a')
     )
     
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_bar_chart(
@@ -158,7 +169,7 @@ def render_bar_chart(
     x_key: str,
     y_key: str,
     title: str = None,
-    color: str = "#7C3AED",
+    color: str = "#9b4819",
     orientation: str = "v",
     height: int = 300
 ):
@@ -196,15 +207,19 @@ def render_bar_chart(
         ))
     
     fig.update_layout(
-        title=title,
+        title=dict(text=title, font=dict(color='#1a1a1a')) if title else None,
         margin=dict(l=40, r=20, t=40 if title else 20, b=40),
         height=height,
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor='#E5E5E5'),
-        plot_bgcolor='white'
+        xaxis=dict(showgrid=False, tickfont=dict(color='#1a1a1a')),
+        yaxis=dict(showgrid=True, gridcolor='#E5E5E5', tickfont=dict(color='#1a1a1a')),
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        font=dict(color='#1a1a1a')
     )
     
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_comparison_chart(
@@ -228,7 +243,7 @@ def render_comparison_chart(
         st.info("No data available")
         return
     
-    colors = ['#7C3AED', '#22C55E', '#F59E0B', '#EF4444', '#3B82F6']
+    colors = ['#9b4819', '#22C55E', '#bd8f53', '#3B82F6', '#F59E0B']
     
     fig = go.Figure()
     
@@ -241,20 +256,25 @@ def render_comparison_chart(
         ))
     
     fig.update_layout(
-        title=title,
+        title=dict(text=title, font=dict(color='#1a1a1a')) if title else None,
         barmode='group',
         margin=dict(l=40, r=20, t=40 if title else 20, b=40),
         height=height,
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor='#E5E5E5'),
+        xaxis=dict(showgrid=False, tickfont=dict(color='#1a1a1a')),
+        yaxis=dict(showgrid=True, gridcolor='#E5E5E5', tickfont=dict(color='#1a1a1a')),
+        paper_bgcolor='white',
         plot_bgcolor='white',
+        font=dict(color='#1a1a1a'),
         legend=dict(
             orientation='h',
             yanchor='bottom',
             y=1.02,
             xanchor='right',
-            x=1
+            x=1,
+            font=dict(color='#1a1a1a')
         )
     )
     
+    st.markdown('<div class="card">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)

@@ -177,14 +177,16 @@ def render():
     factors = data_service.get_factor_attribution()
     
     if factors:
-        # Horizontal bar chart
+        # Horizontal bar chart in a card container
         import plotly.graph_objects as go
+        
+        st.markdown('<div class="card">', unsafe_allow_html=True)
         
         fig = go.Figure(go.Bar(
             x=[f['contribution'] for f in factors],
             y=[f['name'] for f in factors],
             orientation='h',
-            marker_color='#7C3AED'
+            marker_color='#9b4819'
         ))
         
         fig.update_layout(
@@ -193,13 +195,18 @@ def render():
             xaxis=dict(
                 title="Contribution to Decisions",
                 showgrid=True,
-                gridcolor='#E5E5E5'
+                gridcolor='#E5E5E5',
+                tickfont=dict(color='#1a1a1a'),
+                titlefont=dict(color='#1a1a1a')
             ),
-            yaxis=dict(showgrid=False),
-            plot_bgcolor='white'
+            yaxis=dict(showgrid=False, tickfont=dict(color='#1a1a1a')),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            font=dict(color='#1a1a1a')
         )
         
         st.plotly_chart(fig, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Factor explanations
         with st.expander("Factor Explanations"):

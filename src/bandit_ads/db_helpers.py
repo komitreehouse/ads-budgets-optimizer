@@ -365,3 +365,385 @@ def get_api_error_rate(platform: Optional[str] = None, hours: int = 24) -> float
         
         failed_calls = query.filter(APILog.success == False).count()
         return failed_calls / total_calls
+
+
+# =========================================================================
+# Incrementality Experiment Helpers
+# =========================================================================
+
+def create_incrementality_experiment(
+    campaign_id: int,
+    name: str,
+    experiment_type: str,
+    start_date: datetime,
+    holdout_percentage: float = 0.10,
+    duration_days: int = 28,
+    treatment_markets: Optional[List[str]] = None,
+    control_markets: Optional[List[str]] = None,
+    platform: Optional[str] = None,
+    platform_study_id: Optional[str] = None,
+    notes: Optional[str] = None
+) -> 'IncrementalityExperiment':
+    """
+    Create a new incrementality experiment.
+    
+    Args:
+        campaign_id: Campaign to run experiment on
+        name: Experiment name
+        experiment_type: 'holdout', 'geo_lift', or 'platform_native'
+        start_date: When experiment starts
+        holdout_percentage: Control group percentage (default 10%)
+        duration_days: How long to run
+        treatment_markets: List of treatment market codes (for geo-lift)
+        control_markets: List of control market codes (for geo-lift)
+        platform: Platform for native studies
+        platform_study_id: External platform study ID
+        notes: Optional notes
+    
+    Returns:
+        Created experiment
+    """
+    from src.bandit_ads.database import IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        experiment = IncrementalityExperiment(
+            campaign_id=campaign_id,
+            name=name,
+            experiment_type=experiment_type,
+            holdout_percentage=holdout_percentage,
+            treatment_markets=json.dumps(treatment_markets) if treatment_markets else None,
+            control_markets=json.dumps(control_markets) if control_markets else None,
+            platform=platform,
+            platform_study_id=platform_study_id,
+            start_date=start_date,
+            end_date=start_date + timedelta(days=duration_days),
+            status='running',
+            notes=notes
+        )
+        session.add(experiment)
+        session.flush()
+        logger.info(f"Created incrementality experiment: {name} (ID: {experiment.id})")
+        return experiment
+
+
+def get_incrementality_experiment(experiment_id: int) -> Optional['IncrementalityExperiment']:
+    """Get an incrementality experiment by ID."""
+    from src.bandit_ads.database import IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        return session.query(IncrementalityExperiment).filter(
+            IncrementalityExperiment.id == experiment_id
+        ).first()
+
+
+def get_experiments_by_campaign(
+    campaign_id: int,
+    status: Optional[str] = None
+) -> List['IncrementalityExperiment']:
+    """Get all incrementality experiments for a campaign."""
+    from src.bandit_ads.database import IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        query = session.query(IncrementalityExperiment).filter(
+            IncrementalityExperiment.campaign_id == campaign_id
+        )
+        if status:
+            query = query.filter(IncrementalityExperiment.status == status)
+        return query.order_by(desc(IncrementalityExperiment.created_at)).all()
+
+
+def get_all_experiments(
+    status: Optional[str] = None,
+    experiment_type: Optional[str] = None,
+    limit: int = 100
+) -> List['IncrementalityExperiment']:
+    """Get all incrementality experiments."""
+    from src.bandit_ads.database import IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        query = session.query(IncrementalityExperiment)
+        if status:
+            query = query.filter(IncrementalityExperiment.status == status)
+        if experiment_type:
+            query = query.filter(IncrementalityExperiment.experiment_type == experiment_type)
+        return query.order_by(desc(IncrementalityExperiment.created_at)).limit(limit).all()
+
+
+def update_experiment_status(
+    experiment_id: int,
+    status: str,
+    **kwargs
+) -> bool:
+    """
+    Update experiment status and optionally other fields.
+    
+    Args:
+        experiment_id: Experiment ID
+        status: New status ('running', 'completed', 'aborted')
+        **kwargs: Additional fields to update (lift_percent, p_value, etc.)
+    
+    Returns:
+        True if successful
+    """
+    from src.bandit_ads.database import IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        experiment = session.query(IncrementalityExperiment).filter(
+            IncrementalityExperiment.id == experiment_id
+        ).first()
+        
+        if not experiment:
+            return False
+        
+        experiment.status = status
+        
+        # Update any additional fields
+        for key, value in kwargs.items():
+            if hasattr(experiment, key):
+                setattr(experiment, key, value)
+        
+        session.commit()
+        logger.info(f"Updated experiment {experiment_id} status to {status}")
+        return True
+
+
+def update_experiment_results(
+    experiment_id: int,
+    lift_percent: float,
+    confidence_lower: float,
+    confidence_upper: float,
+    p_value: float,
+    is_significant: bool,
+    incremental_roas: float,
+    observed_roas: float,
+    incremental_revenue: float,
+    incremental_conversions: int,
+    treatment_users: int,
+    control_users: int,
+    treatment_conversions: int,
+    control_conversions: int,
+    treatment_revenue: float,
+    control_revenue: float,
+    treatment_spend: float
+) -> bool:
+    """Update experiment with final results."""
+    return update_experiment_status(
+        experiment_id,
+        status='completed',
+        lift_percent=lift_percent,
+        confidence_lower=confidence_lower,
+        confidence_upper=confidence_upper,
+        p_value=p_value,
+        is_significant=is_significant,
+        incremental_roas=incremental_roas,
+        observed_roas=observed_roas,
+        incremental_revenue=incremental_revenue,
+        incremental_conversions=incremental_conversions,
+        treatment_users=treatment_users,
+        control_users=control_users,
+        treatment_conversions=treatment_conversions,
+        control_conversions=control_conversions,
+        treatment_revenue=treatment_revenue,
+        control_revenue=control_revenue,
+        treatment_spend=treatment_spend
+    )
+
+
+def record_incrementality_metric(
+    experiment_id: int,
+    date: datetime,
+    treatment_users: int,
+    treatment_impressions: int,
+    treatment_clicks: int,
+    treatment_conversions: int,
+    treatment_revenue: float,
+    treatment_spend: float,
+    control_users: int,
+    control_conversions: int,
+    control_revenue: float
+) -> 'IncrementalityMetric':
+    """
+    Record daily metrics for an incrementality experiment.
+    
+    Calculates CVR and lift automatically.
+    """
+    from src.bandit_ads.database import IncrementalityMetric, IncrementalityExperiment
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        # Calculate rates
+        treatment_cvr = treatment_conversions / treatment_users if treatment_users > 0 else 0
+        control_cvr = control_conversions / control_users if control_users > 0 else 0
+        
+        # Calculate daily lift
+        if control_cvr > 0:
+            daily_lift = (treatment_cvr - control_cvr) / control_cvr * 100
+        else:
+            daily_lift = 0 if treatment_cvr == 0 else None
+        
+        # Calculate daily iROAS
+        if treatment_spend > 0 and control_users > 0:
+            control_rpu = control_revenue / control_users
+            expected_organic = control_rpu * treatment_users
+            incremental_rev = treatment_revenue - expected_organic
+            daily_iroas = incremental_rev / treatment_spend
+        else:
+            daily_iroas = None
+        
+        # Get cumulative totals
+        prev_metrics = session.query(IncrementalityMetric).filter(
+            IncrementalityMetric.experiment_id == experiment_id,
+            IncrementalityMetric.date < date
+        ).order_by(desc(IncrementalityMetric.date)).first()
+        
+        if prev_metrics:
+            cumulative_treatment = prev_metrics.cumulative_treatment_users + treatment_users
+            cumulative_control = prev_metrics.cumulative_control_users + control_users
+        else:
+            cumulative_treatment = treatment_users
+            cumulative_control = control_users
+        
+        metric = IncrementalityMetric(
+            experiment_id=experiment_id,
+            date=date,
+            treatment_users=treatment_users,
+            treatment_impressions=treatment_impressions,
+            treatment_clicks=treatment_clicks,
+            treatment_conversions=treatment_conversions,
+            treatment_revenue=treatment_revenue,
+            treatment_spend=treatment_spend,
+            control_users=control_users,
+            control_conversions=control_conversions,
+            control_revenue=control_revenue,
+            treatment_cvr=treatment_cvr,
+            control_cvr=control_cvr,
+            daily_lift_percent=daily_lift,
+            daily_incremental_roas=daily_iroas,
+            cumulative_treatment_users=cumulative_treatment,
+            cumulative_control_users=cumulative_control
+        )
+        session.add(metric)
+        session.flush()
+        
+        # Update experiment totals
+        experiment = session.query(IncrementalityExperiment).filter(
+            IncrementalityExperiment.id == experiment_id
+        ).first()
+        
+        if experiment:
+            experiment.treatment_users = cumulative_treatment
+            experiment.control_users = cumulative_control
+            experiment.treatment_conversions = (experiment.treatment_conversions or 0) + treatment_conversions
+            experiment.control_conversions = (experiment.control_conversions or 0) + control_conversions
+            experiment.treatment_revenue = (experiment.treatment_revenue or 0) + treatment_revenue
+            experiment.control_revenue = (experiment.control_revenue or 0) + control_revenue
+            experiment.treatment_spend = (experiment.treatment_spend or 0) + treatment_spend
+        
+        return metric
+
+
+def get_experiment_metrics(
+    experiment_id: int,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
+) -> List['IncrementalityMetric']:
+    """Get daily metrics for an experiment."""
+    from src.bandit_ads.database import IncrementalityMetric
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        query = session.query(IncrementalityMetric).filter(
+            IncrementalityMetric.experiment_id == experiment_id
+        )
+        if start_date:
+            query = query.filter(IncrementalityMetric.date >= start_date)
+        if end_date:
+            query = query.filter(IncrementalityMetric.date <= end_date)
+        return query.order_by(IncrementalityMetric.date).all()
+
+
+def calculate_experiment_results(experiment_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Calculate final results for an experiment from its metrics.
+    
+    Returns:
+        Dictionary with calculated results or None if insufficient data
+    """
+    from src.bandit_ads.database import IncrementalityExperiment, IncrementalityMetric
+    from src.bandit_ads.incrementality import calculate_incrementality, calculate_incremental_roas
+    
+    db_manager = get_db_manager()
+    with db_manager.get_session() as session:
+        experiment = session.query(IncrementalityExperiment).filter(
+            IncrementalityExperiment.id == experiment_id
+        ).first()
+        
+        if not experiment:
+            return None
+        
+        # Get aggregated metrics
+        metrics = session.query(IncrementalityMetric).filter(
+            IncrementalityMetric.experiment_id == experiment_id
+        ).all()
+        
+        if not metrics:
+            return None
+        
+        # Aggregate
+        total_treatment_users = sum(m.treatment_users for m in metrics)
+        total_control_users = sum(m.control_users for m in metrics)
+        total_treatment_conversions = sum(m.treatment_conversions for m in metrics)
+        total_control_conversions = sum(m.control_conversions for m in metrics)
+        total_treatment_revenue = sum(m.treatment_revenue for m in metrics)
+        total_control_revenue = sum(m.control_revenue for m in metrics)
+        total_treatment_spend = sum(m.treatment_spend for m in metrics)
+        
+        # Calculate CVRs
+        treatment_cvr = total_treatment_conversions / total_treatment_users if total_treatment_users > 0 else 0
+        control_cvr = total_control_conversions / total_control_users if total_control_users > 0 else 0
+        
+        # Calculate lift
+        lift_result = calculate_incrementality(
+            treatment_cvr=treatment_cvr,
+            control_cvr=control_cvr,
+            treatment_users=total_treatment_users,
+            control_users=total_control_users,
+            treatment_conversions=total_treatment_conversions,
+            control_conversions=total_control_conversions
+        )
+        
+        # Calculate iROAS
+        roas_result = calculate_incremental_roas(
+            treatment_revenue=total_treatment_revenue,
+            control_revenue=total_control_revenue,
+            treatment_spend=total_treatment_spend,
+            treatment_users=total_treatment_users,
+            control_users=total_control_users
+        )
+        
+        ci = lift_result.get('confidence_interval', (0, 0))
+        
+        return {
+            'lift_percent': lift_result['lift_percent'],
+            'confidence_lower': ci[0] if ci else 0,
+            'confidence_upper': ci[1] if ci else 0,
+            'p_value': lift_result.get('p_value', 1.0),
+            'is_significant': lift_result.get('is_significant', False),
+            'incremental_roas': roas_result['incremental_roas'],
+            'observed_roas': roas_result['observed_roas'],
+            'incremental_revenue': roas_result['incremental_revenue'],
+            'incremental_conversions': int(total_treatment_conversions - (control_cvr * total_treatment_users)),
+            'treatment_users': total_treatment_users,
+            'control_users': total_control_users,
+            'treatment_conversions': total_treatment_conversions,
+            'control_conversions': total_control_conversions,
+            'treatment_revenue': total_treatment_revenue,
+            'control_revenue': total_control_revenue,
+            'treatment_spend': total_treatment_spend,
+            'roas_inflation': roas_result['roas_inflation']
+        }

@@ -1023,6 +1023,535 @@ class TradeDeskConnector(BaseAPIConnector):
         }
 
 
+class IncrementalityConnector:
+    """
+    Connector for platform-native incrementality studies.
+    
+    Supports:
+    - Meta Conversion Lift studies
+    - Google Conversion Lift reports
+    - The Trade Desk Ghost Bid experiments
+    """
+    
+    def __init__(
+        self,
+        google_connector: Optional[GoogleAdsConnector] = None,
+        meta_connector: Optional[MetaAdsConnector] = None,
+        ttd_connector: Optional[TradeDeskConnector] = None
+    ):
+        """
+        Initialize with platform connectors.
+        
+        Args:
+            google_connector: Authenticated Google Ads connector
+            meta_connector: Authenticated Meta Ads connector
+            ttd_connector: Authenticated Trade Desk connector
+        """
+        self.google = google_connector
+        self.meta = meta_connector
+        self.ttd = ttd_connector
+        self.logger = get_logger('api.IncrementalityConnector')
+    
+    # ========== Meta Conversion Lift ==========
+    
+    def create_meta_conversion_lift_study(
+        self,
+        campaign_id: str,
+        name: str,
+        holdout_percentage: float = 0.10,
+        objective: str = 'CONVERSIONS',
+        duration_days: int = 28
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create a Meta Conversion Lift study.
+        
+        Uses Meta's native lift measurement API to create holdout experiments.
+        
+        Args:
+            campaign_id: Meta campaign ID to measure
+            name: Study name
+            holdout_percentage: Percentage to holdout (default 10%)
+            objective: Optimization objective
+            duration_days: Study duration
+        
+        Returns:
+            Study configuration or None if failed
+        """
+        if not self.meta or not self.meta.api:
+            self.logger.error("Meta connector not available")
+            return None
+        
+        try:
+            from facebook_business.adobjects.adaccount import AdAccount
+            from facebook_business.adobjects.adliftstudy import AdLiftStudy
+            
+            account = AdAccount(f"act_{self.meta.ad_account_id}")
+            
+            # Create lift study
+            study_params = {
+                'name': name,
+                'description': f'Incrementality study for campaign {campaign_id}',
+                'cells': [
+                    {
+                        'name': 'Treatment',
+                        'treatment_percentage': int((1 - holdout_percentage) * 100),
+                        'control_percentage': int(holdout_percentage * 100),
+                        'campaigns': [campaign_id]
+                    }
+                ],
+                'objectives': [objective],
+                'start_time': int(datetime.now().timestamp()),
+                'end_time': int((datetime.now() + timedelta(days=duration_days)).timestamp())
+            }
+            
+            study = account.create_ad_lift_study(params=study_params)
+            
+            self.logger.info(f"Created Meta Conversion Lift study: {study.get('id')}")
+            
+            return {
+                'platform': 'meta',
+                'study_id': study.get('id'),
+                'name': name,
+                'campaign_id': campaign_id,
+                'holdout_percentage': holdout_percentage,
+                'status': 'created'
+            }
+            
+        except ImportError:
+            self.logger.warning("facebook-business library not installed")
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to create Meta lift study: {str(e)}")
+            return None
+    
+    def get_meta_conversion_lift_results(
+        self,
+        study_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get results from a Meta Conversion Lift study.
+        
+        Args:
+            study_id: Meta lift study ID
+        
+        Returns:
+            Study results including lift metrics
+        """
+        if not self.meta or not self.meta.api:
+            self.logger.error("Meta connector not available")
+            return None
+        
+        try:
+            from facebook_business.adobjects.adliftstudy import AdLiftStudy
+            
+            study = AdLiftStudy(study_id)
+            fields = [
+                'name',
+                'status',
+                'cells',
+                'lift',
+                'confidence_level'
+            ]
+            
+            study_data = study.api_get(fields=fields)
+            
+            # Parse results
+            lift_data = study_data.get('lift', {})
+            
+            return {
+                'platform': 'meta',
+                'study_id': study_id,
+                'name': study_data.get('name'),
+                'status': study_data.get('status'),
+                'lift_percent': lift_data.get('value'),
+                'confidence_interval': (
+                    lift_data.get('lower_bound'),
+                    lift_data.get('upper_bound')
+                ),
+                'confidence_level': study_data.get('confidence_level'),
+                'is_significant': lift_data.get('is_statistically_significant', False),
+                'treatment_conversions': lift_data.get('treatment_conversions'),
+                'control_conversions': lift_data.get('control_conversions'),
+                'incremental_conversions': lift_data.get('incremental_conversions')
+            }
+            
+        except ImportError:
+            self.logger.warning("facebook-business library not installed")
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to get Meta lift results: {str(e)}")
+            return None
+    
+    # ========== Google Conversion Lift ==========
+    
+    def create_google_conversion_lift_experiment(
+        self,
+        campaign_id: str,
+        name: str,
+        holdout_percentage: float = 0.10,
+        duration_days: int = 28
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create a Google Ads Conversion Lift experiment.
+        
+        Uses Google's Experiments API to set up brand lift/conversion lift studies.
+        
+        Args:
+            campaign_id: Google Ads campaign ID
+            name: Experiment name
+            holdout_percentage: Control group percentage
+            duration_days: Experiment duration
+        
+        Returns:
+            Experiment configuration or None if failed
+        """
+        if not self.google or not self.google.client:
+            self.logger.error("Google Ads connector not available")
+            return None
+        
+        try:
+            from google.ads.googleads.errors import GoogleAdsException
+            
+            # Get services
+            experiment_service = self.google.client.get_service("ExperimentService")
+            campaign_experiment_service = self.google.client.get_service("CampaignExperimentService")
+            
+            # Create experiment
+            experiment = self.google.client.get_type("Experiment")
+            experiment.name = name
+            experiment.description = f"Incrementality lift study for campaign {campaign_id}"
+            experiment.type_ = self.google.client.enums.ExperimentTypeEnum.CONVERSION_LIFT
+            
+            # Set traffic split
+            experiment.goals.append(
+                self.google.client.get_type("ExperimentGoal")(
+                    conversion_goal_metric_type=self.google.client.enums.ConversionGoalMetricTypeEnum.CONVERSIONS
+                )
+            )
+            
+            # Create operation
+            operation = self.google.client.get_type("ExperimentOperation")
+            operation.create = experiment
+            
+            response = experiment_service.mutate_experiments(
+                customer_id=self.google.customer_id,
+                operations=[operation]
+            )
+            
+            experiment_resource = response.results[0].resource_name
+            
+            self.logger.info(f"Created Google Conversion Lift experiment: {experiment_resource}")
+            
+            return {
+                'platform': 'google',
+                'experiment_resource': experiment_resource,
+                'name': name,
+                'campaign_id': campaign_id,
+                'holdout_percentage': holdout_percentage,
+                'status': 'created'
+            }
+            
+        except ImportError:
+            self.logger.warning("google-ads library not installed")
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to create Google lift experiment: {str(e)}")
+            return None
+    
+    def get_google_conversion_lift_results(
+        self,
+        experiment_resource: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get results from a Google Conversion Lift experiment.
+        
+        Args:
+            experiment_resource: Google Ads experiment resource name
+        
+        Returns:
+            Experiment results including lift metrics
+        """
+        if not self.google or not self.google.client:
+            self.logger.error("Google Ads connector not available")
+            return None
+        
+        try:
+            # Query experiment results using GAQL
+            query = f"""
+                SELECT
+                    experiment.name,
+                    experiment.status,
+                    metrics.conversions,
+                    metrics.conversions_value,
+                    metrics.cost_micros
+                FROM experiment
+                WHERE experiment.resource_name = '{experiment_resource}'
+            """
+            
+            response = self.google.client.get_service("GoogleAdsService").search(
+                customer_id=self.google.customer_id,
+                query=query
+            )
+            
+            results = []
+            for row in response:
+                results.append({
+                    'name': row.experiment.name,
+                    'status': row.experiment.status.name,
+                    'conversions': row.metrics.conversions,
+                    'revenue': row.metrics.conversions_value,
+                    'cost': row.metrics.cost_micros / 1_000_000
+                })
+            
+            if results:
+                result = results[0]
+                return {
+                    'platform': 'google',
+                    'experiment_resource': experiment_resource,
+                    'name': result['name'],
+                    'status': result['status'],
+                    'conversions': result['conversions'],
+                    'revenue': result['revenue'],
+                    'cost': result['cost'],
+                    'roas': result['revenue'] / result['cost'] if result['cost'] > 0 else 0
+                }
+            
+            return None
+            
+        except ImportError:
+            self.logger.warning("google-ads library not installed")
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to get Google lift results: {str(e)}")
+            return None
+    
+    # ========== The Trade Desk Ghost Bids ==========
+    
+    def create_ttd_ghost_bid_experiment(
+        self,
+        campaign_id: str,
+        name: str,
+        ghost_bid_percentage: float = 0.10,
+        duration_days: int = 28
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create a Trade Desk Ghost Bid experiment.
+        
+        Ghost bids are fake bids that track what would have happened without ads.
+        They participate in the auction but don't actually win/serve impressions.
+        
+        Args:
+            campaign_id: TTD campaign ID
+            name: Experiment name
+            ghost_bid_percentage: Percentage of bids to ghost
+            duration_days: Experiment duration
+        
+        Returns:
+            Experiment configuration or None if failed
+        """
+        if not self.ttd or not self.ttd.session:
+            self.logger.error("Trade Desk connector not available")
+            return None
+        
+        try:
+            # TTD Ghost Bid API endpoint
+            url = "https://api.thetradedesk.com/v3/experiment/ghostbid"
+            
+            experiment_config = {
+                'AdvertiserId': self.ttd.advertiser_id,
+                'CampaignId': campaign_id,
+                'Name': name,
+                'Description': f'Incrementality experiment for campaign {campaign_id}',
+                'GhostBidPercentage': ghost_bid_percentage * 100,  # API expects percentage
+                'StartDate': datetime.now().isoformat(),
+                'EndDate': (datetime.now() + timedelta(days=duration_days)).isoformat(),
+                'Status': 'Active'
+            }
+            
+            response = self.ttd.session.post(url, json=experiment_config)
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                self.logger.info(f"Created TTD Ghost Bid experiment: {result.get('ExperimentId')}")
+                
+                return {
+                    'platform': 'ttd',
+                    'experiment_id': result.get('ExperimentId'),
+                    'name': name,
+                    'campaign_id': campaign_id,
+                    'ghost_bid_percentage': ghost_bid_percentage,
+                    'status': 'created'
+                }
+            else:
+                self.logger.error(f"TTD API error: {response.status_code} - {response.text}")
+                return None
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create TTD ghost bid experiment: {str(e)}")
+            return None
+    
+    def get_ttd_ghost_bid_results(
+        self,
+        experiment_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get results from a Trade Desk Ghost Bid experiment.
+        
+        Args:
+            experiment_id: TTD experiment ID
+        
+        Returns:
+            Experiment results including incrementality metrics
+        """
+        if not self.ttd or not self.ttd.session:
+            self.logger.error("Trade Desk connector not available")
+            return None
+        
+        try:
+            # TTD Ghost Bid results endpoint
+            url = f"https://api.thetradedesk.com/v3/experiment/ghostbid/{experiment_id}/results"
+            
+            response = self.ttd.session.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Parse results
+                treatment = data.get('TreatmentMetrics', {})
+                control = data.get('ControlMetrics', {})  # Ghost bid group
+                
+                treatment_conversions = treatment.get('Conversions', 0)
+                control_conversions = control.get('Conversions', 0)
+                treatment_revenue = treatment.get('Revenue', 0)
+                control_revenue = control.get('Revenue', 0)
+                treatment_users = treatment.get('Users', 0)
+                control_users = control.get('Users', 0)
+                treatment_spend = treatment.get('Spend', 0)
+                
+                # Calculate lift
+                treatment_cvr = treatment_conversions / treatment_users if treatment_users > 0 else 0
+                control_cvr = control_conversions / control_users if control_users > 0 else 0
+                
+                if control_cvr > 0:
+                    lift_percent = (treatment_cvr - control_cvr) / control_cvr * 100
+                else:
+                    lift_percent = 0 if treatment_cvr == 0 else float('inf')
+                
+                # Calculate iROAS
+                if treatment_spend > 0:
+                    # Scale control revenue to treatment population size
+                    scale_factor = treatment_users / control_users if control_users > 0 else 1
+                    expected_organic_revenue = control_revenue * scale_factor
+                    incremental_revenue = treatment_revenue - expected_organic_revenue
+                    incremental_roas = incremental_revenue / treatment_spend
+                    observed_roas = treatment_revenue / treatment_spend
+                else:
+                    incremental_roas = 0
+                    observed_roas = 0
+                    incremental_revenue = 0
+                
+                return {
+                    'platform': 'ttd',
+                    'experiment_id': experiment_id,
+                    'status': data.get('Status', 'unknown'),
+                    'lift_percent': lift_percent,
+                    'incremental_roas': incremental_roas,
+                    'observed_roas': observed_roas,
+                    'incremental_revenue': incremental_revenue,
+                    'treatment_conversions': treatment_conversions,
+                    'control_conversions': control_conversions,
+                    'treatment_revenue': treatment_revenue,
+                    'control_revenue': control_revenue,
+                    'treatment_users': treatment_users,
+                    'control_users': control_users,
+                    'treatment_spend': treatment_spend,
+                    'confidence_interval': data.get('ConfidenceInterval'),
+                    'p_value': data.get('PValue'),
+                    'is_significant': data.get('IsSignificant', False)
+                }
+            else:
+                self.logger.error(f"TTD API error: {response.status_code} - {response.text}")
+                return None
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get TTD ghost bid results: {str(e)}")
+            return None
+    
+    # ========== Unified Interface ==========
+    
+    def create_incrementality_study(
+        self,
+        platform: str,
+        campaign_id: str,
+        name: str,
+        holdout_percentage: float = 0.10,
+        duration_days: int = 28,
+        **kwargs
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create an incrementality study on the specified platform.
+        
+        Unified interface for all platforms.
+        
+        Args:
+            platform: 'google', 'meta', or 'ttd'
+            campaign_id: Platform-specific campaign ID
+            name: Study name
+            holdout_percentage: Control group percentage
+            duration_days: Study duration
+            **kwargs: Platform-specific parameters
+        
+        Returns:
+            Study configuration or None if failed
+        """
+        platform = platform.lower()
+        
+        if platform in ['meta', 'facebook']:
+            return self.create_meta_conversion_lift_study(
+                campaign_id, name, holdout_percentage, 
+                kwargs.get('objective', 'CONVERSIONS'), duration_days
+            )
+        elif platform in ['google', 'google_ads']:
+            return self.create_google_conversion_lift_experiment(
+                campaign_id, name, holdout_percentage, duration_days
+            )
+        elif platform in ['ttd', 'trade_desk', 'the_trade_desk']:
+            return self.create_ttd_ghost_bid_experiment(
+                campaign_id, name, holdout_percentage, duration_days
+            )
+        else:
+            self.logger.error(f"Unsupported platform: {platform}")
+            return None
+    
+    def get_incrementality_results(
+        self,
+        platform: str,
+        study_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get incrementality study results from the specified platform.
+        
+        Args:
+            platform: 'google', 'meta', or 'ttd'
+            study_id: Platform-specific study/experiment ID
+        
+        Returns:
+            Study results or None if failed
+        """
+        platform = platform.lower()
+        
+        if platform in ['meta', 'facebook']:
+            return self.get_meta_conversion_lift_results(study_id)
+        elif platform in ['google', 'google_ads']:
+            return self.get_google_conversion_lift_results(study_id)
+        elif platform in ['ttd', 'trade_desk', 'the_trade_desk']:
+            return self.get_ttd_ghost_bid_results(study_id)
+        else:
+            self.logger.error(f"Unsupported platform: {platform}")
+            return None
+
+
 def create_api_connector(platform: str, credentials: Dict[str, Any]) -> Optional[BaseAPIConnector]:
     """
     Factory function to create appropriate API connector.

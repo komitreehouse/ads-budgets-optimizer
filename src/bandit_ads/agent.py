@@ -261,3 +261,317 @@ class ThompsonSamplingAgent:
     def is_budget_exhausted(self):
         """Check if budget is exhausted."""
         return self.total_spent >= self.total_budget
+
+
+class IncrementalityAwareBandit(ThompsonSamplingAgent):
+    """
+    Thompson Sampling agent that incorporates incrementality experiment results
+    into bandit priors.
+    
+    This is the key differentiator: incrementality results automatically feed back
+    into the optimization, reallocating budget based on TRUE incremental ROAS
+    rather than just observed (attributed) ROAS.
+    
+    The closed-loop system:
+    1. Run holdout experiment to measure true incrementality
+    2. Compare observed ROAS to incremental ROAS
+    3. Adjust alpha/beta priors based on the gap
+    4. Reallocate budget to arms with higher incremental value
+    """
+    
+    def __init__(self, arms, total_budget, holdout_percentage=0.10, **kwargs):
+        """
+        Initialize incrementality-aware bandit.
+        
+        Args:
+            arms: List of Arm objects representing ad configurations
+            total_budget: Total budget to allocate across arms
+            holdout_percentage: Percentage of budget/users to holdout (default 10%)
+            **kwargs: Additional arguments passed to ThompsonSamplingAgent
+        """
+        super().__init__(arms, total_budget, **kwargs)
+        
+        self.holdout_percentage = holdout_percentage
+        
+        # Incrementality tracking per arm
+        self.incrementality_priors = {}  # arm_key -> incremental ROAS
+        self.observed_vs_incremental = {}  # arm_key -> ratio of observed/incremental
+        
+        # Holdout arm for tracking organic conversions
+        from src.bandit_ads.incrementality import HoldoutArm
+        self.holdout_arm = HoldoutArm(holdout_percentage=holdout_percentage)
+        
+        # Track whether incrementality adjustments have been applied
+        self.incrementality_adjustments_applied = defaultdict(bool)
+        
+        # Adjustment history for explainability
+        self.adjustment_history = []
+    
+    def record_holdout_metrics(
+        self, 
+        users: int, 
+        conversions: int, 
+        revenue: float,
+        date=None
+    ):
+        """
+        Record organic conversions from the holdout group.
+        
+        Call this with metrics from users who were NOT shown ads.
+        
+        Args:
+            users: Number of users in holdout
+            conversions: Conversions from holdout users
+            revenue: Revenue from holdout users
+            date: Date of metrics (optional)
+        """
+        self.holdout_arm.record_organic(users, conversions, revenue, date)
+    
+    def incorporate_incrementality(self, arm_key: str, experiment_result: dict):
+        """
+        Update arm priors based on incrementality experiment results.
+        
+        This is the KEY METHOD that closes the loop:
+        - If incremental ROAS < observed ROAS: we were overestimating this arm
+        - If incremental ROAS > observed ROAS: we were underestimating this arm
+        
+        Args:
+            arm_key: String key for the arm
+            experiment_result: Dictionary containing:
+                - lift_percent: Incremental lift percentage
+                - incremental_roas: True incremental ROAS
+                - observed_roas: Attributed/observed ROAS
+                - is_significant: Whether results are statistically significant
+                - confidence_interval: (lower, upper) CI bounds
+        """
+        if not experiment_result.get('is_significant', False):
+            # Don't update priors if results aren't significant
+            return
+        
+        incremental_roas = experiment_result.get('incremental_roas', 0)
+        observed_roas = experiment_result.get('observed_roas', 0)
+        
+        if incremental_roas <= 0:
+            # No incremental value - significant negative adjustment
+            incremental_roas = 0.1  # Floor to avoid division issues
+        
+        # Store incrementality prior
+        self.incrementality_priors[arm_key] = incremental_roas
+        
+        # Calculate ratio for tracking
+        if observed_roas > 0:
+            self.observed_vs_incremental[arm_key] = observed_roas / incremental_roas
+        else:
+            self.observed_vs_incremental[arm_key] = 1.0
+        
+        # Adjust beta distribution based on incrementality
+        trials = self.arm_trials[arm_key]
+        
+        if trials > 0:
+            # Calculate adjustment magnitude
+            if observed_roas > 0:
+                adjustment_ratio = incremental_roas / observed_roas
+            else:
+                adjustment_ratio = 1.0
+            
+            if incremental_roas < observed_roas:
+                # We were OVERESTIMATING this arm
+                # Increase beta (failures) to reduce its perceived value
+                overestimate_factor = (observed_roas - incremental_roas) / observed_roas
+                beta_adjustment = overestimate_factor * trials * 0.5  # 50% of trials as adjustment weight
+                
+                self.beta[arm_key] += beta_adjustment
+                
+                adjustment_record = {
+                    'arm_key': arm_key,
+                    'direction': 'decrease',
+                    'reason': 'observed_roas_overestimated',
+                    'observed_roas': observed_roas,
+                    'incremental_roas': incremental_roas,
+                    'beta_adjustment': beta_adjustment,
+                    'timestamp': self._get_timestamp()
+                }
+            else:
+                # We were UNDERESTIMATING this arm
+                # Increase alpha (successes) to increase its perceived value
+                underestimate_factor = (incremental_roas - observed_roas) / incremental_roas if incremental_roas > 0 else 0
+                alpha_adjustment = underestimate_factor * trials * 0.5
+                
+                self.alpha[arm_key] += alpha_adjustment
+                
+                adjustment_record = {
+                    'arm_key': arm_key,
+                    'direction': 'increase',
+                    'reason': 'observed_roas_underestimated',
+                    'observed_roas': observed_roas,
+                    'incremental_roas': incremental_roas,
+                    'alpha_adjustment': alpha_adjustment,
+                    'timestamp': self._get_timestamp()
+                }
+            
+            self.adjustment_history.append(adjustment_record)
+            self.incrementality_adjustments_applied[arm_key] = True
+            
+            # Force reallocation after adjustment
+            self.current_allocation = self._allocate_budget()
+    
+    def _allocate_budget(self):
+        """
+        Override allocation to use incremental ROAS when available.
+        
+        This ensures budget flows to arms with highest TRUE incremental value,
+        not just highest observed/attributed value.
+        """
+        # Start with parent allocation logic
+        allocation = super()._allocate_budget()
+        
+        # If we have incrementality priors, adjust allocation
+        if self.incrementality_priors:
+            # Recalculate scores using incremental ROAS
+            incremental_scores = {}
+            
+            for arm in self.arms:
+                arm_key = str(arm)
+                
+                if arm_key in self.incrementality_priors:
+                    # Use incremental ROAS as the score
+                    incremental_scores[arm_key] = self.incrementality_priors[arm_key]
+                else:
+                    # Fall back to observed performance
+                    if self.arm_spending[arm_key] > 0:
+                        incremental_scores[arm_key] = self.arm_rewards[arm_key] / self.arm_spending[arm_key]
+                    else:
+                        # Unexplored - give benefit of doubt
+                        incremental_scores[arm_key] = self._sample_beta(self.alpha[arm_key], self.beta[arm_key])
+            
+            # Reallocate based on incremental scores
+            total_score = sum(max(0.1, s) for s in incremental_scores.values())
+            remaining_budget = self.total_budget - self.total_spent
+            
+            if remaining_budget > 0 and total_score > 0:
+                min_budget = remaining_budget * self.min_allocation
+                
+                for arm in self.arms:
+                    arm_key = str(arm)
+                    score = max(0.1, incremental_scores.get(arm_key, 0.1))
+                    proportion = score / total_score
+                    allocation[arm_key] = max(min_budget, remaining_budget * proportion)
+        
+        # Reserve holdout budget (not actually spent)
+        holdout_budget = (self.total_budget - self.total_spent) * self.holdout_percentage
+        
+        # Scale down allocations to account for holdout
+        scale_factor = 1.0 - self.holdout_percentage
+        for arm_key in allocation:
+            allocation[arm_key] *= scale_factor
+        
+        return allocation
+    
+    def get_incrementality_summary(self) -> dict:
+        """
+        Get summary of incrementality measurements and adjustments.
+        
+        Returns:
+            Dictionary with incrementality metrics and adjustment history
+        """
+        holdout_metrics = self.holdout_arm.get_metrics()
+        
+        arm_incrementality = {}
+        for arm in self.arms:
+            arm_key = str(arm)
+            observed_roas = self.arm_rewards[arm_key] / self.arm_spending[arm_key] if self.arm_spending[arm_key] > 0 else 0
+            
+            arm_incrementality[arm_key] = {
+                'observed_roas': observed_roas,
+                'incremental_roas': self.incrementality_priors.get(arm_key),
+                'roas_inflation': self.observed_vs_incremental.get(arm_key, 1.0),
+                'adjustment_applied': self.incrementality_adjustments_applied.get(arm_key, False),
+                'current_allocation': self.current_allocation.get(arm_key, 0),
+                'alpha': self.alpha[arm_key],
+                'beta': self.beta[arm_key]
+            }
+        
+        return {
+            'holdout_metrics': holdout_metrics,
+            'arm_incrementality': arm_incrementality,
+            'adjustment_history': self.adjustment_history,
+            'total_adjustments': len(self.adjustment_history)
+        }
+    
+    def calculate_arm_incrementality(self, arm_key: str) -> dict:
+        """
+        Calculate incrementality for a specific arm using holdout data.
+        
+        Args:
+            arm_key: String key for the arm
+        
+        Returns:
+            Dictionary with incrementality metrics for this arm
+        """
+        from src.bandit_ads.incrementality import calculate_incrementality, calculate_incremental_roas
+        
+        # Get arm metrics
+        arm_spending = self.arm_spending.get(arm_key, 0)
+        arm_revenue = self.arm_rewards.get(arm_key, 0)
+        arm_impressions = self.arm_impressions.get(arm_key, 0)
+        
+        # Get holdout metrics
+        baseline_cvr = self.holdout_arm.get_baseline_cvr()
+        baseline_rpu = self.holdout_arm.get_baseline_revenue_per_user()
+        holdout_users = self.holdout_arm.organic_users
+        holdout_conversions = self.holdout_arm.organic_conversions
+        holdout_revenue = self.holdout_arm.organic_revenue
+        
+        # Estimate treatment metrics (users who saw this arm's ads)
+        # This is a simplification - in production, you'd track this directly
+        treatment_users = arm_impressions  # Approximate users = impressions
+        
+        if arm_spending > 0 and treatment_users > 0:
+            # Calculate observed CVR for this arm
+            # Note: In production, track actual conversions per arm
+            observed_roas = arm_revenue / arm_spending if arm_spending > 0 else 0
+            
+            # Use holdout as control
+            if holdout_users > 0:
+                result = calculate_incremental_roas(
+                    treatment_revenue=arm_revenue,
+                    control_revenue=holdout_revenue,
+                    treatment_spend=arm_spending,
+                    treatment_users=treatment_users,
+                    control_users=holdout_users
+                )
+                
+                return {
+                    'arm_key': arm_key,
+                    'incremental_roas': result['incremental_roas'],
+                    'observed_roas': result['observed_roas'],
+                    'roas_inflation': result['roas_inflation'],
+                    'incremental_revenue': result['incremental_revenue'],
+                    'has_data': True
+                }
+        
+        return {
+            'arm_key': arm_key,
+            'incremental_roas': None,
+            'observed_roas': None,
+            'roas_inflation': None,
+            'incremental_revenue': None,
+            'has_data': False
+        }
+    
+    def _get_timestamp(self):
+        """Get current timestamp string."""
+        from datetime import datetime
+        return datetime.now().isoformat()
+    
+    def get_performance_metrics(self):
+        """
+        Override to include incrementality metrics.
+        """
+        base_metrics = super().get_performance_metrics()
+        
+        # Add incrementality data
+        base_metrics['incrementality'] = self.get_incrementality_summary()
+        base_metrics['holdout_percentage'] = self.holdout_percentage
+        
+        return base_metrics

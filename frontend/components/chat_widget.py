@@ -82,7 +82,7 @@ def render_chat_widget(campaign_id: Optional[int] = None, context: str = ""):
         # Input
         query = st.text_input(
             "Ask a question...",
-            key="chat_input",
+            key="sidebar_chat_input",
             placeholder="e.g., Why did ROAS drop last week?"
         )
         

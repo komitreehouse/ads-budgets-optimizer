@@ -595,7 +595,7 @@ def render_campaign_settings(campaign_id: int, settings: Dict[str, Any], data_se
             # Input
             query = st.text_input(
                 "Ask a question...",
-                key="chat_input",
+                key="campaign_detail_chat_input",
                 placeholder="e.g., Why did ROAS drop last week?"
             )
             
