@@ -89,6 +89,24 @@ class BaseAPIConnector(ABC):
         """Get list of available campaigns."""
         pass
 
+    def set_campaign_budget(self, arm: Arm, new_budget: float, dry_run: bool = False) -> bool:
+        """
+        Push a new daily budget to the platform for this arm's campaign.
+
+        Args:
+            arm: Arm object with platform entity IDs
+            new_budget: New daily budget in dollars
+            dry_run: If True, log the change without making API calls
+
+        Returns:
+            True if successful (or if dry_run)
+        """
+        if dry_run:
+            self.logger.info(f"[DRY RUN] Would set budget ${new_budget:.2f} for arm {arm}")
+            return True
+        self.logger.warning(f"set_campaign_budget not implemented for {self.__class__.__name__}")
+        return False
+
 
 class GoogleAdsConnector(BaseAPIConnector):
     """Connector for Google Ads API."""
@@ -333,25 +351,95 @@ class GoogleAdsConnector(BaseAPIConnector):
         except Exception as e:
             self.logger.error(f"Error fetching campaigns: {str(e)}")
             return []
-    
+
+    @retry_on_failure(max_retries=3)
+    def set_campaign_budget(self, arm: Arm, new_budget: float, dry_run: bool = False) -> bool:
+        """
+        Set daily budget for a Google Ads campaign.
+
+        Uses CampaignBudgetService to update the campaign's shared budget resource.
+        """
+        if dry_run:
+            self.logger.info(f"[DRY RUN] Would set Google Ads budget ${new_budget:.2f} for arm {arm}")
+            return True
+
+        if not self.client:
+            self.logger.error("Not authenticated. Call authenticate() first.")
+            return False
+
+        self._rate_limit()
+
+        try:
+            from google.ads.googleads.errors import GoogleAdsException
+
+            db_arm_id = self._get_arm_from_db(arm)
+            campaign_id = self._get_campaign_id(arm, db_arm_id)
+
+            if not campaign_id:
+                self.logger.warning(f"No campaign_id for arm {arm}, cannot set budget")
+                return False
+
+            # Query for the campaign's budget resource
+            ga_service = self.client.get_service("GoogleAdsService")
+            query = (
+                f"SELECT campaign.campaign_budget "
+                f"FROM campaign "
+                f"WHERE campaign.id = {campaign_id}"
+            )
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            budget_resource = None
+            for row in response:
+                budget_resource = row.campaign.campaign_budget
+                break
+
+            if not budget_resource:
+                self.logger.error(f"Could not find budget resource for campaign {campaign_id}")
+                return False
+
+            # Update the budget (convert dollars to micros)
+            budget_service = self.client.get_service("CampaignBudgetService")
+            budget_operation = self.client.get_type("CampaignBudgetOperation")
+            budget = budget_operation.update
+            budget.resource_name = budget_resource
+            budget.amount_micros = int(new_budget * 1_000_000)
+
+            budget_operation.update_mask.CopyFrom(
+                self.client.get_type("FieldMask")(paths=["amount_micros"])
+            )
+
+            budget_service.mutate_campaign_budgets(
+                customer_id=self.customer_id,
+                operations=[budget_operation]
+            )
+
+            self.logger.info(f"Set Google Ads budget to ${new_budget:.2f} for campaign {campaign_id}")
+            return True
+
+        except ImportError:
+            self.logger.warning("google-ads library not installed")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error setting Google Ads budget: {e}")
+            return False
+
     def _get_arm_from_db(self, arm: Arm, campaign_id: Optional[int] = None) -> Optional[int]:
         """
         Look up arm in database to get its ID.
-        
+
         Args:
             arm: Arm object
             campaign_id: Optional campaign ID to narrow search
-        
+
         Returns:
             Database arm ID or None if not found
         """
         from src.bandit_ads.database import get_db_manager
         from sqlalchemy import and_
-        
+
         db_manager = get_db_manager()
         with db_manager.get_session() as session:
             from src.bandit_ads.database import Arm as DBArm
-            
+
             query = session.query(DBArm).filter(
                 and_(
                     DBArm.platform == arm.platform,
@@ -359,13 +447,13 @@ class GoogleAdsConnector(BaseAPIConnector):
                     DBArm.creative == arm.creative
                 )
             )
-            
+
             if campaign_id:
                 query = query.filter(DBArm.campaign_id == campaign_id)
-            
+
             db_arm = query.first()
             return db_arm.id if db_arm else None
-    
+
     def _get_campaign_id(self, arm: Arm, db_arm_id: Optional[int] = None) -> str:
         """
         Map arm to Google Ads campaign ID.
@@ -663,6 +751,63 @@ class MetaAdsConnector(BaseAPIConnector):
             self.logger.error(f"Error fetching campaigns: {str(e)}")
             return []
     
+    def set_campaign_budget(self, arm: Arm, new_budget: float, dry_run: bool = False) -> bool:
+        """
+        Set daily budget for a Meta ad set.
+
+        Uses the Marketing API to update the ad set's daily_budget field.
+        """
+        if dry_run:
+            self.logger.info(f"[DRY RUN] Would set Meta budget ${new_budget:.2f} for arm {arm}")
+            return True
+
+        if not self.api:
+            self.logger.error("Not authenticated. Call authenticate() first.")
+            return False
+
+        self._rate_limit()
+
+        try:
+            from facebook_business.adobjects.adset import AdSet
+            from facebook_business.exceptions import FacebookRequestError
+
+            # Look up ad set ID from platform_entity_ids
+            from src.bandit_ads.database import get_db_manager, Arm as DBArm
+            from sqlalchemy import and_
+
+            db_manager = get_db_manager()
+            ad_set_id = None
+            with db_manager.get_session() as session:
+                db_arm = session.query(DBArm).filter(
+                    and_(
+                        DBArm.platform == arm.platform,
+                        DBArm.channel == arm.channel,
+                        DBArm.creative == arm.creative
+                    )
+                ).first()
+                if db_arm:
+                    entity_ids = get_arm_platform_entity_ids(db_arm.id)
+                    if entity_ids:
+                        ad_set_id = entity_ids.get('ad_set_id') or entity_ids.get('adset_id')
+
+            if not ad_set_id:
+                self.logger.warning(f"No ad_set_id for arm {arm}, cannot set budget")
+                return False
+
+            ad_set = AdSet(ad_set_id)
+            # Meta daily_budget is in cents
+            ad_set.update(params={'daily_budget': int(new_budget * 100)})
+
+            self.logger.info(f"Set Meta budget to ${new_budget:.2f} for ad set {ad_set_id}")
+            return True
+
+        except ImportError:
+            self.logger.warning("facebook-business library not installed")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error setting Meta budget: {e}")
+            return False
+
     def _empty_metrics(self) -> Dict[str, Any]:
         """Return empty metrics structure."""
         return {
@@ -1009,6 +1154,56 @@ class TradeDeskConnector(BaseAPIConnector):
             self.logger.error(f"Error fetching campaigns: {str(e)}")
             return []
     
+    def set_campaign_budget(self, arm: Arm, new_budget: float, dry_run: bool = False) -> bool:
+        """
+        Set daily budget for a Trade Desk campaign/flight.
+
+        Uses the TTD campaign update endpoint to set BudgetInImpressions or DailyBudget.
+        """
+        if dry_run:
+            self.logger.info(f"[DRY RUN] Would set TTD budget ${new_budget:.2f} for arm {arm}")
+            return True
+
+        if not self.session:
+            self.logger.error("Not authenticated. Call authenticate() first.")
+            return False
+
+        self._rate_limit()
+
+        try:
+            db_arm_id = self._get_arm_from_db(arm)
+            entity_ids = None
+            if db_arm_id:
+                entity_ids = get_arm_platform_entity_ids(db_arm_id)
+
+            campaign_id = entity_ids.get('campaign_id') if entity_ids else None
+            if not campaign_id:
+                self.logger.warning(f"No campaign_id for arm {arm}, cannot set budget")
+                return False
+
+            # Get current campaign to preserve settings
+            url = f"https://api.thetradedesk.com/v3/campaign/{campaign_id}"
+            get_response = self.session.get(url)
+            if get_response.status_code != 200:
+                self.logger.error(f"Failed to get TTD campaign: {get_response.text}")
+                return False
+
+            campaign_data = get_response.json()
+            # TTD uses DailyBudgetInMicros
+            campaign_data['Budget']['DailyBudgetInMicros'] = int(new_budget * 1_000_000)
+
+            update_response = self.session.put(url, json=campaign_data)
+            if update_response.status_code == 200:
+                self.logger.info(f"Set TTD budget to ${new_budget:.2f} for campaign {campaign_id}")
+                return True
+            else:
+                self.logger.error(f"Failed to set TTD budget: {update_response.text}")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Error setting TTD budget: {e}")
+            return False
+
     def _empty_metrics(self) -> Dict[str, Any]:
         """Return empty metrics structure."""
         return {
@@ -1021,6 +1216,69 @@ class TradeDeskConnector(BaseAPIConnector):
             'source': 'trade_desk',
             'timestamp': datetime.now().isoformat()
         }
+
+
+# ---- Budget Push Dispatcher ----
+
+# Cached connector instances
+_connectors: Dict[str, BaseAPIConnector] = {}
+
+
+def get_platform_connector(platform: str, credentials: Optional[Dict[str, Any]] = None) -> Optional[BaseAPIConnector]:
+    """Get or create a connector for the given platform."""
+    platform_lower = platform.lower()
+    if platform_lower in _connectors:
+        return _connectors[platform_lower]
+
+    if not credentials:
+        # Try loading from config
+        try:
+            from src.bandit_ads.utils import ConfigManager
+            config = ConfigManager()
+            credentials = config.get(f'api_credentials.{platform_lower}', {})
+        except Exception:
+            return None
+
+    connector = None
+    if platform_lower in ('google', 'google ads'):
+        connector = GoogleAdsConnector(credentials)
+    elif platform_lower in ('meta', 'facebook', 'meta ads'):
+        connector = MetaAdsConnector(credentials)
+    elif platform_lower in ('the trade desk', 'ttd', 'trade desk'):
+        connector = TradeDeskConnector(credentials)
+
+    if connector:
+        _connectors[platform_lower] = connector
+    return connector
+
+
+def push_budget_to_platform(
+    arm: Arm,
+    new_budget: float,
+    dry_run: bool = False,
+    credentials: Optional[Dict[str, Any]] = None
+) -> bool:
+    """
+    Push a budget change to the appropriate ad platform.
+
+    Dispatches to the correct connector based on the arm's platform.
+
+    Args:
+        arm: Arm object (platform field determines which connector to use)
+        new_budget: New daily budget in dollars
+        dry_run: If True, log the change without making API calls
+        credentials: Optional platform credentials
+
+    Returns:
+        True if successful
+    """
+    logger = get_logger('budget_push')
+    connector = get_platform_connector(arm.platform, credentials)
+    if not connector:
+        logger.warning(f"No connector available for platform '{arm.platform}'")
+        return False
+
+    return connector.set_campaign_budget(arm, new_budget, dry_run=dry_run)
 
 
 class IncrementalityConnector:

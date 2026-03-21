@@ -1021,22 +1021,23 @@ class DataService:
     # =========================================================================
     
     def get_latest_explanation(self, campaign_id: int) -> Optional[Dict[str, Any]]:
-        """Get the latest explanation for a campaign."""
+        """Get the latest real-time explanation for a campaign's allocation decisions."""
+        if not self.use_mock:
+            result = self._api_get(f"/api/optimizer/explanation/{campaign_id}")
+            if result and result.get('explanation'):
+                return {
+                    'text': result['explanation'],
+                    'timestamp': result.get('latest_change', {}).get('timestamp', datetime.now().strftime('%b %d, %Y at %I:%M %p')),
+                    'model': 'Claude',
+                    'factors': result.get('latest_change', {})
+                }
+
+        # Fallback when API unavailable or no data yet
         return {
-            'text': """The Google Search budget increased by 20% (from 15% to 35%) due to several converging factors:
-
-1. **Q4 Seasonality Effect**: We're in Q4, which historically increases Search channel performance by about 20%. The optimizer detected this seasonal pattern.
-
-2. **Strong Recent Performance**: Over the past week, this arm's ROAS improved from 2.1 to 2.5, a 19% improvement.
-
-3. **Reduced Risk**: The risk score decreased from 0.15 to 0.10, meaning the optimizer has more confidence in this arm's consistent performance.""",
+            'text': 'No allocation changes recorded yet. The optimizer will generate explanations as it runs.',
             'timestamp': datetime.now().strftime('%b %d, %Y at %I:%M %p'),
-            'model': 'Claude 3.5 Sonnet',
-            'factors': {
-                'Seasonality': '+12%',
-                'ROAS Improvement': '+8%',
-                'Risk Reduction': '+5%'
-            }
+            'model': None,
+            'factors': {}
         }
     
     # =========================================================================
@@ -1233,29 +1234,31 @@ class DataService:
                 print(f"Error forcing optimization: {e}")
     
     def get_recent_decisions(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Get recent optimizer decisions."""
+        """Get recent optimizer decisions from the real-time change tracker."""
         if not self.use_mock:
             try:
-                history = self.change_tracker.get_allocation_history(campaign_id=None, days=7)
-                return [
-                    {
-                        'timestamp': h.timestamp,
-                        'description': f"Changed {h.arm_id} allocation by {h.change_percent:+.1f}%",
-                        'campaign_name': f"Campaign {h.campaign_id}",
-                        'type': h.change_type,
-                        'impact': h.change_percent
-                    }
-                    for h in history[:limit]
-                ]
+                result = self._api_get("/api/optimizer/decisions", params={"limit": limit})
+                if result and isinstance(result, list):
+                    return [
+                        {
+                            'timestamp': d.get('timestamp', datetime.now().isoformat()),
+                            'description': f"Changed {d.get('arm_id', 'unknown')} allocation: {d.get('old_allocation', 0):.1%} → {d.get('new_allocation', 0):.1%}",
+                            'campaign_name': f"Campaign {d.get('campaign_id', '')}",
+                            'type': d.get('change_type', 'auto'),
+                            'impact': round((d.get('new_allocation', 0) - d.get('old_allocation', 0)) * 100, 1),
+                            'explanation': d.get('explanation_text'),
+                            'factors': d.get('factors', {}),
+                        }
+                        for d in result
+                    ]
             except Exception as e:
-                print(f"Error getting decisions: {e}")
-        
+                print(f"Error getting decisions from API: {e}")
+
+        # Mock fallback
         return [
             {'timestamp': datetime.now() - timedelta(minutes=30), 'description': 'Increased Google Search by 5%', 'campaign_name': 'Q1 Brand Awareness', 'type': 'allocation_change', 'impact': 5.0},
             {'timestamp': datetime.now() - timedelta(hours=2), 'description': 'Reduced Meta Display by 3%', 'campaign_name': 'Q1 Brand Awareness', 'type': 'allocation_change', 'impact': -3.0},
             {'timestamp': datetime.now() - timedelta(hours=4), 'description': 'Paused underperforming creative', 'campaign_name': 'Product Launch', 'type': 'pause', 'impact': 0},
-            {'timestamp': datetime.now() - timedelta(hours=6), 'description': 'Budget rebalanced across arms', 'campaign_name': 'Retargeting', 'type': 'allocation_change', 'impact': 2.5},
-            {'timestamp': datetime.now() - timedelta(hours=8), 'description': 'Increased Trade Desk by 2%', 'campaign_name': 'Holiday Promotions', 'type': 'allocation_change', 'impact': 2.0}
         ]
     
     def get_decisions(self, campaign: str = None, decision_type: str = None, period: str = "Last 24 hours") -> List[Dict[str, Any]]:
@@ -1286,10 +1289,26 @@ class DataService:
         ]
     
     def get_factor_attribution(self) -> List[Dict[str, Any]]:
-        """Get factor attribution for decisions."""
+        """Get factor attribution from real optimizer decisions."""
+        if not self.use_mock:
+            try:
+                result = self._api_get("/api/optimizer/factor-attribution")
+                if result and isinstance(result, list) and len(result) > 0:
+                    return [
+                        {
+                            'name': f.get('factor', 'Unknown'),
+                            'contribution': f.get('total_impact', 0),
+                            'description': f"Influenced {f.get('count', 0)} decisions"
+                        }
+                        for f in result
+                    ]
+            except Exception as e:
+                print(f"Error getting factor attribution: {e}")
+
+        # Mock fallback
         return [
             {'name': 'ROAS Performance', 'contribution': 0.35, 'description': 'Recent return on ad spend improvements'},
-            {'name': 'Q4 Seasonality', 'contribution': 0.25, 'description': 'Seasonal patterns in advertising effectiveness'},
+            {'name': 'Seasonality', 'contribution': 0.25, 'description': 'Seasonal patterns in advertising effectiveness'},
             {'name': 'Risk Adjustment', 'contribution': 0.15, 'description': 'Risk-based portfolio balancing'},
             {'name': 'Carryover Effect', 'contribution': 0.12, 'description': 'Ad stock and delayed conversion impact'},
             {'name': 'Competition', 'contribution': 0.08, 'description': 'Market saturation adjustments'},
@@ -1301,23 +1320,24 @@ class DataService:
     # =========================================================================
     
     def query_orchestrator(self, query: str, campaign_id: int = None) -> Dict[str, Any]:
-        """Send a query to the orchestrator."""
+        """Send a natural language query to the orchestrator for explainable answers."""
         if not self.use_mock:
             try:
-                # TODO: Implement orchestrator API endpoint
-                # orchestrator = get_orchestrator()
-                return {"error": "Orchestrator API not yet implemented"}
-                import asyncio
-                result = asyncio.run(orchestrator.process_query(
-                    query=query,
-                    user_id="dashboard_user",
-                    campaign_id=campaign_id
-                ))
-                return result
+                result = self._api_post("/api/ask", {
+                    "query": query,
+                    "campaign_id": campaign_id
+                })
+                if result and not result.get('error'):
+                    return {
+                        'response': result.get('answer', ''),
+                        'query_type': result.get('query_type', 'general'),
+                        'model': result.get('model_used', 'Claude'),
+                        'tools_used': result.get('tools_used', [])
+                    }
             except Exception as e:
                 print(f"Error querying orchestrator: {e}")
-        
-        # Mock response
+
+        # Mock response fallback
         return self._mock_query_response(query)
     
     def _mock_query_response(self, query: str) -> Dict[str, Any]:

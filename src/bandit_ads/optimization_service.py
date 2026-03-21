@@ -107,11 +107,22 @@ class ContinuousOptimizationService:
         self.running = False
         self.shutdown_event = Event()
         self.lock = Lock()
-        
+
         # Track active campaigns
         self.active_campaigns: Dict[int, Dict[str, Any]] = {}
         self.campaign_runners: Dict[int, AdOptimizationRunner] = {}
-        
+
+        # Track previous allocations per campaign to detect changes
+        self.previous_allocations: Dict[int, Dict[str, float]] = {}
+
+        # Budget push config
+        self.budget_push_enabled = self.config_manager.get('budget_push.enabled', False)
+        self.budget_push_dry_run = self.config_manager.get('budget_push.dry_run', True)
+        self.allocation_change_threshold = 0.01  # 1% minimum change to trigger push
+
+        # Change tracking and explanation generation
+        self._init_change_tracker()
+
         # Statistics
         self.stats = {
             'total_cycles': 0,
@@ -123,6 +134,22 @@ class ContinuousOptimizationService:
         
         logger.info(f"Optimization service initialized (interval: {optimization_interval_minutes} min)")
     
+    def _init_change_tracker(self):
+        """Initialize change tracking and explanation generation."""
+        try:
+            from src.bandit_ads.change_tracker import get_change_tracker
+            self.change_tracker = get_change_tracker()
+        except Exception as e:
+            logger.warning(f"Change tracker unavailable: {e}")
+            self.change_tracker = None
+
+        try:
+            from src.bandit_ads.explanation_generator import ExplanationGenerator
+            self.explanation_generator = ExplanationGenerator()
+        except Exception as e:
+            logger.warning(f"Explanation generator unavailable: {e}")
+            self.explanation_generator = None
+
     def start(self):
         """Start the continuous optimization service."""
         if self.running:
@@ -163,26 +190,130 @@ class ContinuousOptimizationService:
         logger.info("Optimization service stopped")
     
     def _load_active_campaigns(self):
-        """Load active campaigns from database."""
+        """Load active campaigns from database and create runners."""
         db_manager = get_db_manager()
         with db_manager.get_session() as session:
             from src.bandit_ads.database import Campaign
             campaigns = session.query(Campaign).filter(
                 Campaign.status == 'active'
             ).all()
-            
+
             for campaign in campaigns:
-                self.active_campaigns[campaign.id] = {
-                    'id': campaign.id,
-                    'name': campaign.name,
-                    'budget': campaign.budget,
-                    'status': CampaignStatus.ACTIVE,
-                    'last_optimization': None,
-                    'optimization_count': 0
-                }
-        
-        logger.info(f"Loaded {len(self.active_campaigns)} active campaigns")
+                # Build config and create runner for each active campaign
+                config = self._build_campaign_config_from_db(campaign)
+                if config:
+                    success = self.add_campaign(campaign.id, config)
+                    if not success:
+                        # Still track the campaign even if runner creation fails
+                        self.active_campaigns[campaign.id] = {
+                            'id': campaign.id,
+                            'name': campaign.name,
+                            'budget': campaign.budget,
+                            'status': CampaignStatus.ERROR,
+                            'last_optimization': None,
+                            'optimization_count': 0
+                        }
+                        logger.warning(f"Failed to create runner for campaign {campaign.id}")
+                else:
+                    logger.warning(f"Could not build config for campaign {campaign.id}")
+
+        runners_created = len(self.campaign_runners)
+        logger.info(f"Loaded {len(self.active_campaigns)} active campaigns, {runners_created} runners created")
+
+    def _build_campaign_config_from_db(self, campaign) -> Optional[Dict[str, Any]]:
+        """
+        Build a campaign config dict from a Campaign database record.
+
+        Uses the stored campaign_config JSON if available, otherwise
+        reconstructs from campaign fields and associated arms.
+
+        Args:
+            campaign: Campaign database model instance
+
+        Returns:
+            Campaign config dict compatible with AdOptimizationRunner, or None on failure
+        """
+        try:
+            # If campaign has stored config JSON, use it directly
+            if campaign.campaign_config:
+                config = json.loads(campaign.campaign_config)
+                # Ensure budget is current
+                config.setdefault('agent', {})['total_budget'] = campaign.budget
+                config['name'] = campaign.name
+                return config
+
+            # Otherwise, reconstruct from DB fields and arms
+            arms_db = get_arms_by_campaign(campaign.id)
+            if not arms_db:
+                logger.warning(f"No arms found for campaign {campaign.id}")
+                return None
+
+            # Extract unique platforms, channels, creatives, bids from arms
+            platforms = list(set(a.platform for a in arms_db))
+            channels = list(set(a.channel for a in arms_db))
+            creatives = list(set(a.creative for a in arms_db))
+            bids = sorted(set(a.bid for a in arms_db))
+
+            config = {
+                'name': campaign.name,
+                'arms': {
+                    'platforms': platforms,
+                    'channels': channels,
+                    'creatives': creatives,
+                    'bids': bids
+                },
+                'environment': {
+                    'global_params': {
+                        'ctr': 0.03,
+                        'cvr': 0.08,
+                        'revenue': 10.0,
+                        'cpc': 1.0
+                    },
+                    'mmm_factors': {}
+                },
+                'agent': {
+                    'total_budget': campaign.budget,
+                    'min_allocation': 0.005,
+                    'risk_tolerance': 0.3,
+                    'variance_limit': 0.1
+                },
+                'incrementality': {
+                    'enabled': True,
+                    'holdout_percentage': 0.10
+                },
+                'impressions_per_round': 200
+            }
+
+            return config
+
+        except Exception as e:
+            logger.error(f"Error building config for campaign {campaign.id}: {e}")
+            return None
     
+    def _get_or_create_runner(self, campaign_id: int) -> Optional[AdOptimizationRunner]:
+        """Get existing runner or create one from DB config."""
+        with self.lock:
+            runner = self.campaign_runners.get(campaign_id)
+            if runner:
+                return runner
+
+        # No runner — try to create from DB
+        campaign = get_campaign(campaign_id)
+        if not campaign:
+            return None
+
+        config = self._build_campaign_config_from_db(campaign)
+        if not config:
+            logger.warning(f"Cannot build config for campaign {campaign_id}")
+            return None
+
+        success = self.add_campaign(campaign_id, config)
+        if not success:
+            return None
+
+        with self.lock:
+            return self.campaign_runners.get(campaign_id)
+
     def add_campaign(self, campaign_id: int, campaign_config: Dict[str, Any]) -> bool:
         """
         Add a campaign to the optimization service.
@@ -336,18 +467,10 @@ class ContinuousOptimizationService:
             True if successful
         """
         try:
-            with self.lock:
-                runner = self.campaign_runners.get(campaign_id)
-                if not runner:
-                    # Try to load campaign
-                    campaign = get_campaign(campaign_id)
-                    if not campaign:
-                        return False
-                    
-                    # Create runner (would need campaign config from database)
-                    # For now, skip if runner doesn't exist
-                    logger.warning(f"Runner not found for campaign {campaign_id}")
-                    return False
+            # Get or create runner
+            runner = self._get_or_create_runner(campaign_id)
+            if not runner:
+                return False
             
             # Check if budget exhausted
             if runner.agent.is_budget_exhausted():
@@ -411,13 +534,16 @@ class ContinuousOptimizationService:
             # Track holdout metrics for IncrementalityAwareBandit
             if isinstance(runner.agent, IncrementalityAwareBandit):
                 self._record_holdout_metrics(campaign_id, runner, result, impressions)
-            
+
+            # Detect allocation changes and push budgets / log changes
+            self._handle_allocation_changes(campaign_id, runner, result)
+
             # Save agent state periodically (every 10 optimizations)
             with self.lock:
                 opt_count = self.active_campaigns.get(campaign_id, {}).get('optimization_count', 0)
                 if opt_count % 10 == 0:
                     self._save_agent_state(runner, campaign_id)
-            
+
             return True
             
         except Exception as e:
@@ -499,6 +625,77 @@ class ContinuousOptimizationService:
         except Exception as e:
             logger.warning(f"Error recording holdout metrics for campaign {campaign_id}: {e}")
     
+    def _handle_allocation_changes(self, campaign_id: int, runner: AdOptimizationRunner, result: dict):
+        """
+        Detect allocation changes, push budgets to platforms, and log decisions.
+
+        Compares current allocation with previous allocation. For arms that changed
+        more than the threshold, pushes budget changes and logs the allocation change
+        with the change tracker for explainability.
+        """
+        try:
+            current_allocation = dict(runner.agent.current_allocation)
+            prev_allocation = self.previous_allocations.get(campaign_id, {})
+
+            # Detect significant changes
+            changed_arms = {}
+            for arm_key, new_alloc in current_allocation.items():
+                old_alloc = prev_allocation.get(arm_key, 0.0)
+                if abs(new_alloc - old_alloc) > self.allocation_change_threshold:
+                    changed_arms[arm_key] = {'old': old_alloc, 'new': new_alloc}
+
+            if not changed_arms:
+                # Store current as previous for next comparison
+                self.previous_allocations[campaign_id] = current_allocation
+                return
+
+            # Push budget changes to ad platforms
+            if self.budget_push_enabled:
+                from src.bandit_ads.api_connectors import push_budget_to_platform
+                total_budget = runner.agent.total_budget
+                for arm_key, change in changed_arms.items():
+                    # Find the arm object
+                    arm_obj = next((a for a in runner.agent.arms if str(a) == arm_key), None)
+                    if arm_obj:
+                        daily_budget = change['new'] * total_budget
+                        push_budget_to_platform(
+                            arm_obj, daily_budget,
+                            dry_run=self.budget_push_dry_run
+                        )
+
+            # Log allocation changes for explainability
+            if self.change_tracker:
+                for arm_key, change in changed_arms.items():
+                    try:
+                        # Build optimizer state snapshot
+                        optimizer_state = {
+                            'alpha': runner.agent.alpha.get(arm_key, 1.0),
+                            'beta': runner.agent.beta.get(arm_key, 1.0),
+                            'risk_score': runner.agent.arm_risk_scores.get(arm_key, 0.0),
+                            'trials': runner.agent.arm_trials.get(arm_key, 0)
+                        }
+
+                        self.change_tracker.log_allocation_change(
+                            campaign_id=campaign_id,
+                            arm_id=arm_key,
+                            old_allocation=change['old'],
+                            new_allocation=change['new'],
+                            change_reason='optimization_cycle',
+                            factors={'result': {k: v for k, v in result.items() if isinstance(v, (int, float, str))}},
+                            optimizer_state=optimizer_state,
+                            change_type='auto'
+                        )
+                    except Exception as e:
+                        logger.debug(f"Failed to log allocation change for {arm_key}: {e}")
+
+            # Store current as previous for next comparison
+            self.previous_allocations[campaign_id] = current_allocation
+
+            logger.info(f"Campaign {campaign_id}: {len(changed_arms)} allocation changes detected")
+
+        except Exception as e:
+            logger.warning(f"Error handling allocation changes for campaign {campaign_id}: {e}")
+
     def _save_agent_state(self, runner: AdOptimizationRunner, campaign_id: int):
         """Save agent state to database."""
         try:

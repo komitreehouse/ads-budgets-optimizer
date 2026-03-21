@@ -355,13 +355,13 @@ class IncrementalityAwareBandit(ThompsonSamplingAgent):
             holdout_percentage: Percentage of budget/users to holdout (default 10%)
             **kwargs: Additional arguments passed to ThompsonSamplingAgent
         """
-        super().__init__(arms, total_budget, **kwargs)
-        
-        self.holdout_percentage = holdout_percentage
-        
-        # Incrementality tracking per arm
+        # Initialize incrementality tracking before super().__init__ because
+        # _allocate_budget() (called during init) references these
         self.incrementality_priors = {}  # arm_key -> incremental ROAS
         self.observed_vs_incremental = {}  # arm_key -> ratio of observed/incremental
+        self.holdout_percentage = holdout_percentage
+
+        super().__init__(arms, total_budget, **kwargs)
         
         # Holdout arm for tracking organic conversions
         from src.bandit_ads.incrementality import HoldoutArm

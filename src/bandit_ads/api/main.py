@@ -16,7 +16,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.bandit_ads.api.routes import campaigns, dashboard, recommendations, optimizer, incrementality
+from src.bandit_ads.api.routes import campaigns, dashboard, recommendations, optimizer, incrementality, ask
 from src.bandit_ads.utils import get_logger
 
 logger = get_logger('api')
@@ -43,6 +43,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"]
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["recommendations"])
 app.include_router(optimizer.router, prefix="/api/optimizer", tags=["optimizer"])
 app.include_router(incrementality.router, prefix="/api/incrementality", tags=["incrementality"])
+app.include_router(ask.router, prefix="/api/ask", tags=["ask"])
 
 
 @app.get("/")

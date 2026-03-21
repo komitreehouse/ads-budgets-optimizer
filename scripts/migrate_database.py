@@ -73,7 +73,8 @@ def migrate_campaigns_table():
                 'benchmark_revenue': 'REAL',
                 'benchmark_conversions': 'INTEGER',
                 'scaling_threshold': 'REAL DEFAULT 1.1',
-                'stable_threshold': 'REAL DEFAULT 0.9'
+                'stable_threshold': 'REAL DEFAULT 0.9',
+                'campaign_config': 'TEXT'
             }
             
             added = False

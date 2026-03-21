@@ -50,6 +50,10 @@ class Campaign(Base):
     scaling_threshold = Column(Float, default=1.1)  # 1.1 = 10% above target
     stable_threshold = Column(Float, default=0.9)  # 0.9 = 10% below target
     
+    # Full campaign configuration for real-time optimization (JSON)
+    # Stores agent params, environment params, MMM factors, arm config
+    campaign_config = Column(Text, nullable=True)  # JSON string
+
     # Relationships
     arms = relationship("Arm", back_populates="campaign", cascade="all, delete-orphan")
     metrics = relationship("Metric", back_populates="campaign", cascade="all, delete-orphan")

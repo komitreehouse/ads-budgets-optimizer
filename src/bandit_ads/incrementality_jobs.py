@@ -21,25 +21,26 @@ logger = get_logger('incrementality_jobs')
 
 def check_and_complete_expired_experiments() -> int:
     """
-    Check for experiments that have passed their end date and complete them.
-    
-    This job should be run periodically (e.g., hourly) to automatically
-    calculate final results for experiments that have finished.
-    
+    Check for experiments that have passed their end date, complete them,
+    and automatically apply significant results to the bandit agent.
+
+    This closes the incrementality feedback loop: experiment results
+    directly update Thompson Sampling priors without manual intervention.
+
     Returns:
         Number of experiments completed
     """
     logger.info("Checking for expired experiments...")
-    
+
     try:
         expired = get_expired_experiments()
-        
+
         if not expired:
             logger.info("No expired experiments found")
             return 0
-        
+
         logger.info(f"Found {len(expired)} expired experiments to complete")
-        
+
         completed_count = 0
         for experiment in expired:
             try:
@@ -48,17 +49,94 @@ def check_and_complete_expired_experiments() -> int:
                 if success:
                     completed_count += 1
                     logger.info(f"Successfully completed experiment {experiment.id}")
+
+                    # Auto-apply significant results to the bandit
+                    _auto_apply_to_bandit(experiment.id, experiment.campaign_id)
                 else:
                     logger.warning(f"Failed to complete experiment {experiment.id}")
             except Exception as e:
                 logger.error(f"Error completing experiment {experiment.id}: {e}")
-        
+
         logger.info(f"Completed {completed_count}/{len(expired)} expired experiments")
         return completed_count
-        
+
     except Exception as e:
         logger.error(f"Error in check_and_complete_expired_experiments: {e}")
         return 0
+
+
+def _auto_apply_to_bandit(experiment_id: int, campaign_id: int):
+    """
+    Automatically apply completed experiment results to the bandit agent.
+
+    When an experiment is significant, calls incorporate_incrementality()
+    on the campaign's IncrementalityAwareBandit to update priors.
+    """
+    try:
+        from src.bandit_ads.database import get_db_manager, IncrementalityExperiment
+        from src.bandit_ads.optimization_service import get_optimization_service
+        from src.bandit_ads.agent import IncrementalityAwareBandit
+
+        # Load the completed experiment from DB
+        db_manager = get_db_manager()
+        with db_manager.get_session() as session:
+            experiment = session.query(IncrementalityExperiment).filter(
+                IncrementalityExperiment.id == experiment_id
+            ).first()
+
+            if not experiment:
+                return
+
+            if not experiment.is_significant:
+                logger.info(
+                    f"Experiment {experiment_id} not significant "
+                    f"(p={experiment.p_value}), skipping bandit update"
+                )
+                return
+
+            # Build experiment result dict for incorporate_incrementality
+            experiment_result = {
+                'is_significant': True,
+                'incremental_roas': experiment.incremental_roas or 0,
+                'observed_roas': experiment.observed_roas or 0,
+                'lift_percent': experiment.lift_percent or 0,
+                'p_value': experiment.p_value or 1.0,
+            }
+
+        # Get the optimization service and campaign runner
+        service = get_optimization_service()
+        runner = service.campaign_runners.get(campaign_id)
+
+        if not runner:
+            logger.warning(
+                f"No runner for campaign {campaign_id}, cannot auto-apply "
+                f"incrementality results from experiment {experiment_id}"
+            )
+            return
+
+        if not isinstance(runner.agent, IncrementalityAwareBandit):
+            logger.info(f"Campaign {campaign_id} agent is not IncrementalityAwareBandit, skipping")
+            return
+
+        # Apply to all arms (experiment covers the whole campaign)
+        applied_count = 0
+        for arm in runner.agent.arms:
+            arm_key = str(arm)
+            try:
+                runner.agent.incorporate_incrementality(arm_key, experiment_result)
+                applied_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to apply incrementality to arm {arm_key}: {e}")
+
+        logger.info(
+            f"Auto-applied incrementality results from experiment {experiment_id} "
+            f"to {applied_count} arms in campaign {campaign_id} "
+            f"(lift={experiment_result['lift_percent']:.1f}%, "
+            f"iROAS={experiment_result['incremental_roas']:.2f})"
+        )
+
+    except Exception as e:
+        logger.error(f"Error auto-applying incrementality for experiment {experiment_id}: {e}")
 
 
 def sync_platform_native_experiments() -> int:

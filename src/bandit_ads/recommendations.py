@@ -290,14 +290,42 @@ class RecommendationManager:
             rec_type = RecommendationType(recommendation.recommendation_type)
             
             if rec_type == RecommendationType.ALLOCATION_CHANGE:
-                # Apply allocation change
-                # TODO: Implement allocation override
-                logger.info(f"Applying allocation change: {details}")
+                # Apply allocation change to the bandit and push to platform
+                arm_key = details.get('arm_key', details.get('arm_id', ''))
+                new_allocation = details.get('suggested_allocation', details.get('new_allocation'))
+                if arm_key and new_allocation is not None:
+                    runner = self.optimization_service.campaign_runners.get(recommendation.campaign_id)
+                    if runner and runner.agent:
+                        runner.agent.current_allocation[arm_key] = new_allocation
+                        # Push to platform
+                        arm_obj = next((a for a in runner.agent.arms if str(a) == arm_key), None)
+                        if arm_obj:
+                            from src.bandit_ads.api_connectors import push_budget_to_platform
+                            daily_budget = new_allocation * runner.agent.total_budget
+                            push_budget_to_platform(
+                                arm_obj, daily_budget,
+                                dry_run=self.optimization_service.budget_push_dry_run
+                            )
+                logger.info(f"Applied allocation change: {details}")
                 return True
             elif rec_type == RecommendationType.BUDGET_ADJUSTMENT:
-                # Apply budget adjustment
-                # TODO: Implement budget update
-                logger.info(f"Applying budget adjustment: {details}")
+                # Apply budget adjustment and push to platform
+                new_budget = details.get('new_budget', details.get('suggested_budget'))
+                if new_budget is not None:
+                    runner = self.optimization_service.campaign_runners.get(recommendation.campaign_id)
+                    if runner and runner.agent:
+                        runner.agent.total_budget = new_budget
+                        # Push to all active arms
+                        for arm in runner.agent.arms:
+                            arm_key = str(arm)
+                            alloc = runner.agent.current_allocation.get(arm_key, 0)
+                            if alloc > 0:
+                                from src.bandit_ads.api_connectors import push_budget_to_platform
+                                push_budget_to_platform(
+                                    arm, alloc * new_budget,
+                                    dry_run=self.optimization_service.budget_push_dry_run
+                                )
+                logger.info(f"Applied budget adjustment: {details}")
                 return True
             elif rec_type == RecommendationType.CAMPAIGN_PAUSE:
                 self.optimization_service.pause_campaign(recommendation.campaign_id)
