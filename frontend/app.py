@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # Import pages after config
-from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding, incrementality
+from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding, incrementality, data_sources, planning
 from frontend.components.chat_widget import render_chat_widget
 
 # Custom CSS for IPSA brand styling
@@ -493,38 +493,18 @@ def render_sidebar():
         # Navigation
         pages = {
             "🏠 Home": "home",
+            "🗂 Data Sources": "data_sources",
+            "✓ Actions": "recommendations",
+            "📈 Planning": "planning",
             "📊 Campaigns": "campaigns",
-            "🤖 Optimizer": "optimizer",
-            "📈 Incrementality": "incrementality",
+            "🧪 Incrementality": "incrementality",
             "💬 Ask": "ask",
-            "✓ Recommendations": "recommendations",
         }
-        
+
         # Get current page from session state
         if "current_page" not in st.session_state:
-            # Check if onboarding is complete, if not start with onboarding
-            if not st.session_state.get("onboarding_complete", False):
-                st.session_state.current_page = "onboarding"
-            else:
-                st.session_state.current_page = "home"
-        
-        # Onboarding / Data Upload button
-        onboarding_complete = st.session_state.get("onboarding_complete", False)
-        btn_label = "📤 Upload Data" if onboarding_complete else "🚀 Get Started"
-        btn_type = "secondary" if onboarding_complete else "primary"
-        
-        if st.button(
-            btn_label,
-            key="nav_onboarding",
-            use_container_width=True,
-            type=btn_type
-        ):
-            st.session_state.current_page = "onboarding"
-            # Reset onboarding state if re-entering
-            if onboarding_complete:
-                st.session_state.onboarding_step = 1
-            st.rerun()
-        
+            st.session_state.current_page = "home"
+
         st.divider()
         
         for label, page_key in pages.items():
@@ -532,7 +512,7 @@ def render_sidebar():
             if page_key == "recommendations":
                 pending_count = st.session_state.get("pending_recommendations", 0)
                 if pending_count > 0:
-                    label = f"{label} ({pending_count})"
+                    label = f"✓ Actions ({pending_count})"
             
             if st.button(
                 label,
@@ -620,6 +600,10 @@ def main():
         onboarding.render()
     elif current_page == "home":
         home.render(get_time_greeting())
+    elif current_page == "data_sources":
+        data_sources.render()
+    elif current_page == "planning":
+        planning.render()
     elif current_page == "campaigns":
         campaigns.render()
     elif current_page == "campaign_detail":
@@ -645,12 +629,15 @@ def render_global_chat_widget():
     campaign_id = st.session_state.get("selected_campaign_id")
     
     context_map = {
-        "home": "dashboard overview",
+        "home": "budget command center",
+        "data_sources": "data sources",
+        "planning": "planning and forecasting",
         "campaigns": "campaigns list",
         "campaign_detail": f"campaign {campaign_id}",
         "optimizer": "optimizer status",
-        "recommendations": "recommendations",
-        "ask": "ask page"
+        "recommendations": "action center",
+        "ask": "ask page",
+        "incrementality": "incrementality experiments",
     }
     
     context = context_map.get(current_page, "the platform")

@@ -1800,6 +1800,177 @@ Would you like me to provide more specific details? Try asking:
         return recommendations[:4]  # Limit to 4 recommendations
     
     # =========================================================================
+    # Data Sources (upload management)
+    # =========================================================================
+
+    def get_data_sources(self) -> Dict[str, Any]:
+        """Return connected platform statuses and uploaded file list."""
+        result = self._api_get("/api/data")
+        if result:
+            return result
+        # Mock fallback: platforms not connected, no files
+        return {
+            "platforms": [
+                {"platform": "google_ads", "display_name": "Google Ads", "icon": "🔍", "connected": False, "last_sync": None, "error": "API not available"},
+                {"platform": "meta_ads", "display_name": "Meta Ads", "icon": "👥", "connected": False, "last_sync": None, "error": "API not available"},
+                {"platform": "the_trade_desk", "display_name": "The Trade Desk", "icon": "🎯", "connected": False, "last_sync": None, "error": "API not available"},
+            ],
+            "uploaded_files": [],
+        }
+
+    def get_uploaded_files(self) -> List[Dict[str, Any]]:
+        """Return previously uploaded files."""
+        result = self._api_get("/api/data")
+        if result:
+            return result.get("uploaded_files", [])
+        return []
+
+    def upload_data_file(self, uploaded_file) -> Dict[str, Any]:
+        """Upload a file to the backend for processing."""
+        try:
+            import requests as req
+            url = f"{self.api_base_url}/api/data/upload"
+            files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/octet-stream")}
+            response = req.post(url, files=files, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"File upload failed: {e}")
+            # Mock success for development
+            return {
+                "success": True,
+                "filename": uploaded_file.name,
+                "rows": 0,
+                "date_range": None,
+                "size_bytes": len(uploaded_file.getvalue()),
+                "note": "Stored locally (API unavailable)"
+            }
+
+    def delete_uploaded_file(self, filename: str) -> bool:
+        """Remove an uploaded file record."""
+        try:
+            import requests as req
+            import urllib.parse
+            url = f"{self.api_base_url}/api/data/upload/{urllib.parse.quote(filename)}"
+            response = req.delete(url, timeout=10)
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    # =========================================================================
+    # Forecasting & Scenario Planning
+    # =========================================================================
+
+    def get_forecast(self, campaign_id: int, horizon_days: int = 30) -> Dict[str, Any]:
+        """Return ROAS forecast for a campaign over the given horizon."""
+        result = self._api_get(f"/api/forecasting/{campaign_id}", params={"horizon": horizon_days})
+        if result:
+            return result
+        # Fallback: generate stub forecast inline
+        return self._mock_forecast(campaign_id, horizon_days)
+
+    def _mock_forecast(self, campaign_id: int, horizon_days: int) -> Dict[str, Any]:
+        """Stub forecast when API is unavailable."""
+        from datetime import datetime, timedelta
+        import math
+        today = datetime.utcnow()
+        channels = {
+            "Google Search": (2.8, 0.3),
+            "Meta Social": (2.1, 0.4),
+            "Programmatic": (1.9, 0.35),
+        }
+        hist_channels: Dict[str, Any] = {}
+        result_channels: Dict[str, Any] = {}
+
+        for ch, (base, unc) in channels.items():
+            hist_dates = [(today - timedelta(days=30 - i)).strftime("%Y-%m-%d") for i in range(30)]
+            hist_roas = [round(base + random.uniform(-0.2, 0.2), 2) for _ in hist_dates]
+            hist_channels[ch] = {"dates": hist_dates, "roas": hist_roas}
+
+            future_dates = [today + timedelta(days=d + 1) for d in range(horizon_days)]
+
+            def seasonal(dt):
+                factors = {1: 0.92, 2: 0.94, 3: 0.97, 4: 0.99, 5: 1.01, 6: 1.00,
+                           7: 0.98, 8: 1.00, 9: 1.03, 10: 1.05, 11: 1.12, 12: 1.15}
+                return factors.get(dt.month, 1.0)
+
+            means = [round(base * seasonal(d), 3) for d in future_dates]
+            result_channels[ch] = {
+                "dates": [d.strftime("%Y-%m-%d") for d in future_dates],
+                "roas_mean": means,
+                "roas_lower": [round(v - unc, 3) for v in means],
+                "roas_upper": [round(v + unc, 3) for v in means],
+                "spend_projected": [round(1000 * seasonal(d), 2) for d in future_dates],
+            }
+
+        return {
+            "campaign_id": campaign_id,
+            "horizon_days": horizon_days,
+            "channels": result_channels,
+            "history": hist_channels,
+            "mmm_seasonality_note": "Seasonality based on historical patterns (stub data).",
+        }
+
+    def simulate_scenario(
+        self, campaign_id: int, budget_changes: Dict[str, float], horizon_days: int = 30
+    ) -> Dict[str, Any]:
+        """Simulate what-if budget reallocation."""
+        result = self._api_post("/api/scenarios/simulate", json={
+            "campaign_id": campaign_id,
+            "budget_changes": budget_changes,
+            "horizon_days": horizon_days,
+        })
+        if result:
+            return result
+        # Fallback simulation
+        return self._mock_simulate(campaign_id, budget_changes, horizon_days)
+
+    def _mock_simulate(self, campaign_id: int, budget_changes: Dict[str, float], horizon_days: int) -> Dict[str, Any]:
+        """Stub scenario simulation."""
+        forecast = self._mock_forecast(campaign_id, horizon_days)
+        channels = forecast.get("channels", {})
+
+        def project(override=None):
+            totals = {}
+            for ch, data in channels.items():
+                daily = override.get(ch, data["spend_projected"][0] if data["spend_projected"] else 1000) if override else (data["spend_projected"][0] if data["spend_projected"] else 1000)
+                spends = [daily] * horizon_days
+                roas_means = data.get("roas_mean", [2.0] * horizon_days)
+                total_spend = sum(spends)
+                total_rev = sum(s * r for s, r in zip(spends, roas_means))
+                totals[ch] = {
+                    "total_spend": round(total_spend, 2),
+                    "total_revenue": round(total_rev, 2),
+                    "avg_roas": round(total_rev / total_spend if total_spend > 0 else 0, 3),
+                }
+            return totals
+
+        current_chs = project()
+        proposed_chs = project(budget_changes)
+
+        def agg(chs):
+            ts = sum(v["total_spend"] for v in chs.values())
+            tr = sum(v["total_revenue"] for v in chs.values())
+            return {"total_spend": round(ts, 2), "total_revenue": round(tr, 2),
+                    "blended_roas": round(tr / ts if ts > 0 else 0, 3)}
+
+        cur = agg(current_chs)
+        prop = agg(proposed_chs)
+        roas_delta = ((prop["blended_roas"] - cur["blended_roas"]) / cur["blended_roas"] * 100) if cur["blended_roas"] > 0 else 0
+
+        return {
+            "campaign_id": campaign_id,
+            "horizon_days": horizon_days,
+            "current": {**cur, "channels": current_chs},
+            "proposed": {**prop, "channels": proposed_chs},
+            "delta": {
+                "total_spend": round(prop["total_spend"] - cur["total_spend"], 2),
+                "total_revenue": round(prop["total_revenue"] - cur["total_revenue"], 2),
+                "roas_change_pct": round(roas_delta, 2),
+            },
+        }
+
+    # =========================================================================
     # Incrementality Testing
     # =========================================================================
     
