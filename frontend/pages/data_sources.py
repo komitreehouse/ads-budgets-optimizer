@@ -125,6 +125,20 @@ def render():
             else:
                 st.error(f"✗ Could not process {uf.name}: {result.get('detail', 'unknown error')}")
 
+    # Demo shortcut
+    st.markdown("""
+    <p style="text-align: center; margin: 12px 0 4px 0; font-size: 0.85rem; color: #717182;">
+        — or —
+    </p>
+    """, unsafe_allow_html=True)
+    demo_col1, demo_col2, demo_col3 = st.columns([2, 3, 2])
+    with demo_col2:
+        if st.button("🎬 Load sample dataset for demo", use_container_width=True, key="ds_load_sample"):
+            st.session_state.current_page = "onboarding"
+            st.session_state.onboarding_step = 1
+            st.session_state.demo_banner_dismissed = False
+            st.rerun()
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------------

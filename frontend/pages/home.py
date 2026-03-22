@@ -42,6 +42,31 @@ def render(greeting: str):
         )
 
     # -----------------------------------------------------------------------
+    # Demo banner — shown when running on mock data (no real campaigns)
+    # -----------------------------------------------------------------------
+    if data_service.use_mock and not st.session_state.get("demo_banner_dismissed", False):
+        banner_col, btn_col, close_col = st.columns([6, 2, 1])
+        with banner_col:
+            st.markdown("""
+            <div style="padding: 10px 0;">
+                <span style="font-size: 0.95rem; font-weight: 600; color: #9b4819;">🎬 Demo mode</span>
+                <span style="font-size: 0.88rem; color: #717182; margin-left: 8px;">
+                    No live campaigns connected — explore a sample dataset to see IPSA in action.
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        with btn_col:
+            if st.button("▶ Run Demo", key="home_run_demo", type="primary", use_container_width=True):
+                st.session_state.current_page = "onboarding"
+                st.session_state.onboarding_step = 1
+                st.rerun()
+        with close_col:
+            if st.button("✕", key="home_dismiss_demo", use_container_width=True):
+                st.session_state.demo_banner_dismissed = True
+                st.rerun()
+        st.divider()
+
+    # -----------------------------------------------------------------------
     # Fetch data
     # -----------------------------------------------------------------------
     try:

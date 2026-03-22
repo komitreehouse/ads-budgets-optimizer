@@ -450,10 +450,130 @@ def load_custom_css():
     .stSlider > div > div > div > div {
         background-color: var(--primary);
     }
-    
+
     /* Toggle */
     .stCheckbox > label > div[data-testid="stCheckbox"] > div {
         background-color: var(--primary);
+    }
+
+    /* ================================================================
+       DARK MODE OVERRIDE — force all interactive elements to light
+       ================================================================ */
+
+    /* Force the entire app background to cream */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        background-color: var(--background) !important;
+    }
+
+    /* Sidebar always white */
+    [data-testid="stSidebar"] {
+        background-color: var(--card-bg) !important;
+    }
+
+    /* All block containers: cream background, dark text */
+    [data-testid="block-container"], .block-container {
+        background-color: var(--background) !important;
+        color: var(--foreground) !important;
+    }
+
+    /* Native Streamlit metric cards — force white bg, dark text */
+    [data-testid="stMetric"],
+    [data-testid="metric-container"] {
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--muted-bg) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        color: var(--foreground) !important;
+    }
+
+    [data-testid="stMetricValue"],
+    [data-testid="stMetricLabel"],
+    [data-testid="stMetricDelta"] {
+        color: var(--foreground) !important;
+    }
+
+    /* Selectbox / dropdown — control and popup list */
+    [data-baseweb="select"] > div,
+    [data-baseweb="select"] [data-baseweb="select"] {
+        background-color: var(--card-bg) !important;
+        color: var(--foreground) !important;
+    }
+
+    /* Dropdown popover / listbox */
+    [data-baseweb="popover"],
+    [data-baseweb="menu"],
+    [role="listbox"],
+    [data-baseweb="list"] {
+        background-color: var(--card-bg) !important;
+        color: var(--foreground) !important;
+        border: 1px solid var(--muted-bg) !important;
+    }
+
+    /* Individual dropdown options */
+    [role="option"],
+    [data-baseweb="menu-item"],
+    li[role="option"] {
+        background-color: var(--card-bg) !important;
+        color: var(--foreground) !important;
+    }
+
+    [role="option"]:hover,
+    [data-baseweb="menu-item"]:hover {
+        background-color: var(--muted-bg) !important;
+    }
+
+    /* Selected option highlight */
+    [aria-selected="true"][role="option"] {
+        background-color: #fdf6f0 !important;
+        color: var(--primary) !important;
+    }
+
+    /* All text inputs */
+    input, textarea, [data-baseweb="textarea"] textarea {
+        background-color: var(--card-bg) !important;
+        color: var(--foreground) !important;
+        border-color: var(--muted-bg) !important;
+    }
+
+    /* Expanders */
+    [data-testid="stExpander"] {
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--muted-bg) !important;
+        border-radius: 8px !important;
+    }
+
+    [data-testid="stExpander"] summary {
+        color: var(--foreground) !important;
+    }
+
+    /* Tabs */
+    [data-baseweb="tab-panel"] {
+        background-color: var(--background) !important;
+    }
+
+    /* Alert / info / success / warning boxes */
+    [data-testid="stAlert"] {
+        color: var(--foreground) !important;
+    }
+
+    /* Dataframe */
+    [data-testid="stDataFrame"] * {
+        color: var(--foreground) !important;
+    }
+
+    /* Generic catch-all: any element that Streamlit renders with a dark bg */
+    .stMarkdown, .stText, .stCaption {
+        color: var(--foreground) !important;
+    }
+
+    /* Spinner text */
+    [data-testid="stSpinner"] {
+        color: var(--foreground) !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: var(--muted-bg) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -483,7 +603,7 @@ def render_sidebar():
                 </h1>
             </div>
             <p style="font-size: 0.75rem; color: #717182; margin: 4px 0 0 0;">
-                Budget Optimizer
+                Incremental performance, explained.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -505,15 +625,29 @@ def render_sidebar():
         if "current_page" not in st.session_state:
             st.session_state.current_page = "home"
 
+        # Demo entry — only shown when running on mock/sample data
+        from frontend.services.data_service import DataService as _DS
+        _demo_svc = _DS()
+        if _demo_svc.use_mock:
+            if st.button(
+                "🎬 Demo",
+                key="nav_demo",
+                use_container_width=True,
+                type="primary" if st.session_state.get("current_page") == "onboarding" else "secondary",
+            ):
+                st.session_state.current_page = "onboarding"
+                st.session_state.onboarding_step = 1
+                st.rerun()
+
         st.divider()
-        
+
         for label, page_key in pages.items():
             # Add badge for recommendations
             if page_key == "recommendations":
                 pending_count = st.session_state.get("pending_recommendations", 0)
                 if pending_count > 0:
                     label = f"✓ Actions ({pending_count})"
-            
+
             if st.button(
                 label,
                 key=f"nav_{page_key}",
