@@ -28,7 +28,10 @@ def render():
     data_service = DataService()
 
     st.markdown("## 📈 Planning & Forecasting")
-    st.markdown("Model what-if budget changes and see projected ROAS with confidence intervals.")
+    st.markdown(
+        "Simulate budget reallocation scenarios with causal MMM projections, "
+        "and forecast ROAS forward using Thompson Sampling posterior uncertainty bounds."
+    )
 
     # -----------------------------------------------------------------------
     # Campaign selector + horizon
@@ -208,6 +211,54 @@ def render():
                 })
         if summary_rows:
             st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # -----------------------------------------------------------------------
+    # Export
+    # -----------------------------------------------------------------------
+    st.markdown("### ⬇ Export Campaign Reports")
+    exp_col1, exp_col2, exp_col3 = st.columns(3)
+    with exp_col1:
+        if st.button("📊 Download Metrics CSV", use_container_width=True, key="plan_exp_metrics"):
+            raw = data_service.export_csv(campaign_id, export_type="metrics")
+            if raw:
+                st.download_button(
+                    "Save Metrics CSV",
+                    data=raw,
+                    file_name=f"campaign_{campaign_id}_metrics.csv",
+                    mime="text/csv",
+                    key="plan_dl_metrics",
+                )
+            else:
+                st.error("Export failed — is the API running?")
+    with exp_col2:
+        if st.button("📋 Download Allocation CSV", use_container_width=True, key="plan_exp_alloc"):
+            raw = data_service.export_csv(campaign_id, export_type="allocation")
+            if raw:
+                st.download_button(
+                    "Save Allocation CSV",
+                    data=raw,
+                    file_name=f"campaign_{campaign_id}_allocation.csv",
+                    mime="text/csv",
+                    key="plan_dl_alloc",
+                )
+            else:
+                st.error("Export failed — is the API running?")
+    with exp_col3:
+        if st.button("📄 Download PDF Report", use_container_width=True, key="plan_exp_pdf"):
+            with st.spinner("Generating PDF..."):
+                raw = data_service.export_pdf(campaign_id)
+            if raw:
+                st.download_button(
+                    "Save PDF Report",
+                    data=raw,
+                    file_name=f"ipsa_campaign_{campaign_id}.pdf",
+                    mime="application/pdf",
+                    key="plan_dl_pdf",
+                )
+            else:
+                st.error("PDF export failed — is the API running?")
 
 
 # ---------------------------------------------------------------------------

@@ -102,8 +102,65 @@ def render(campaign_id: int):
                     st.session_state.chat_open = not st.session_state.chat_open
                 st.rerun()
     
+    # Export controls — sits below the header row
+    with st.expander("⬇ Export", expanded=False):
+        exp_col1, exp_col2, exp_col3, exp_col4 = st.columns(4)
+        with exp_col1:
+            if st.button("📊 Metrics CSV", use_container_width=True, key=f"exp_metrics_{campaign_id}"):
+                data = data_service.export_csv(campaign_id, export_type="metrics")
+                if data:
+                    st.download_button(
+                        "Download Metrics CSV",
+                        data=data,
+                        file_name=f"campaign_{campaign_id}_metrics.csv",
+                        mime="text/csv",
+                        key=f"dl_metrics_{campaign_id}",
+                    )
+                else:
+                    st.error("Export failed — is the API running?")
+        with exp_col2:
+            if st.button("📋 Allocation CSV", use_container_width=True, key=f"exp_alloc_{campaign_id}"):
+                data = data_service.export_csv(campaign_id, export_type="allocation")
+                if data:
+                    st.download_button(
+                        "Download Allocation CSV",
+                        data=data,
+                        file_name=f"campaign_{campaign_id}_allocation.csv",
+                        mime="text/csv",
+                        key=f"dl_alloc_{campaign_id}",
+                    )
+                else:
+                    st.error("Export failed — is the API running?")
+        with exp_col3:
+            if st.button("🔄 Decisions CSV", use_container_width=True, key=f"exp_decisions_{campaign_id}"):
+                data = data_service.export_csv(campaign_id, export_type="decisions")
+                if data:
+                    st.download_button(
+                        "Download Decisions CSV",
+                        data=data,
+                        file_name=f"campaign_{campaign_id}_decisions.csv",
+                        mime="text/csv",
+                        key=f"dl_decisions_{campaign_id}",
+                    )
+                else:
+                    st.error("Export failed — is the API running?")
+        with exp_col4:
+            if st.button("📄 PDF Report", use_container_width=True, key=f"exp_pdf_{campaign_id}"):
+                with st.spinner("Generating PDF..."):
+                    data = data_service.export_pdf(campaign_id, campaign_name=campaign.get("name", ""))
+                if data:
+                    st.download_button(
+                        "Download PDF Report",
+                        data=data,
+                        file_name=f"ipsa_campaign_{campaign_id}.pdf",
+                        mime="application/pdf",
+                        key=f"dl_pdf_{campaign_id}",
+                    )
+                else:
+                    st.error("PDF export failed — is the API running?")
+
     st.divider()
-    
+
     # ==========================================================================
     # CORE KPIs SECTION
     # ==========================================================================
@@ -469,7 +526,75 @@ def render(campaign_id: int):
         """)
     
     st.divider()
-    
+
+    # ==========================================================================
+    # ATTRIBUTION SECTION
+    # ==========================================================================
+    st.markdown("### Attribution Analysis")
+    st.caption("How conversion credit is distributed across channels under different attribution models")
+
+    attr_col_left, attr_col_right = st.columns([3, 1])
+    with attr_col_right:
+        attr_method = st.selectbox(
+            "Model",
+            options=["linear", "last_touch", "time_decay"],
+            format_func=lambda x: {"linear": "Linear", "last_touch": "Last Touch", "time_decay": "Time Decay"}.get(x, x),
+            key=f"attr_method_{campaign_id}",
+        )
+
+    with st.spinner("Loading attribution data..."):
+        attr_data = data_service.get_attribution(campaign_id, method=attr_method)
+    channels_attr = attr_data.get("channels", {})
+
+    if channels_attr:
+        import plotly.graph_objects as go
+
+        # Donut chart
+        ch_names = list(channels_attr.keys())
+        ch_shares = [channels_attr[c]["share_pct"] for c in ch_names]
+        ch_roas = [channels_attr[c]["roas"] for c in ch_names]
+
+        ATTR_COLORS = ["#9b4819", "#bd8f53", "#c4966e", "#d4b896", "#e8d5bf"]
+        with attr_col_left:
+            fig_attr = go.Figure(go.Pie(
+                labels=ch_names,
+                values=ch_shares,
+                hole=0.55,
+                marker=dict(colors=ATTR_COLORS[:len(ch_names)]),
+                textinfo="label+percent",
+                hovertemplate="<b>%{label}</b><br>Share: %{value:.1f}%<extra></extra>",
+            ))
+            fig_attr.update_layout(
+                height=260,
+                margin=dict(t=10, b=10, l=10, r=10),
+                showlegend=False,
+                paper_bgcolor="white",
+            )
+            st.plotly_chart(fig_attr, use_container_width=True)
+
+        # Table
+        import pandas as pd
+        attr_rows = []
+        for ch, vals in channels_attr.items():
+            attr_rows.append({
+                "Channel": ch,
+                "Attributed Revenue": f"${vals['attributed_revenue']:,.0f}",
+                "Spend": f"${vals['spend']:,.0f}",
+                "Attribution ROAS": f"{vals['roas']:.2f}x",
+                "Share": f"{vals['share_pct']:.1f}%",
+            })
+        st.dataframe(pd.DataFrame(attr_rows), use_container_width=True, hide_index=True)
+
+        st.caption(
+            f"**{attr_method.replace('_', ' ').title()} model** · "
+            "Last Touch gives 100% credit to the final channel before conversion · "
+            "Linear splits equally · Time Decay favours recent touchpoints"
+        )
+    else:
+        st.info("No attribution data available for this campaign.")
+
+    st.divider()
+
     # ==========================================================================
     # EXPLANATION SECTION (with chat integration)
     # ==========================================================================

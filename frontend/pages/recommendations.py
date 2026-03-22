@@ -37,6 +37,10 @@ def render():
     data_service = DataService()
 
     st.markdown("## ✓ Action Center")
+    st.markdown(
+        "AI-recommended budget decisions, ranked by estimated incremental impact. "
+        "Each action is grounded in Thompson Sampling posteriors and causal MMM signals."
+    )
 
     tab_pending, tab_applied, tab_rejected = st.tabs(["⏳ Pending", "✅ Applied", "❌ Rejected"])
 

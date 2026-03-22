@@ -2275,3 +2275,48 @@ Would you like me to provide more specific details? Try asking:
             })
         
         return metrics
+
+    # =========================================================================
+    # Export
+    # =========================================================================
+
+    def export_csv(self, campaign_id: int, export_type: str = "metrics", days: int = 30) -> Optional[bytes]:
+        """Download CSV bytes for a campaign.  export_type: metrics | allocation | decisions"""
+        try:
+            url = f"{self.api_base_url}/api/export/{campaign_id}/csv"
+            response = requests.get(url, params={"type": export_type, "days": days}, timeout=30)
+            response.raise_for_status()
+            return response.content
+        except Exception:
+            return None
+
+    def export_pdf(self, campaign_id: int, campaign_name: str = "") -> Optional[bytes]:
+        """Download PDF bytes for a campaign report."""
+        try:
+            url = f"{self.api_base_url}/api/export/{campaign_id}/pdf"
+            params = {"campaign_name": campaign_name} if campaign_name else {}
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            return response.content
+        except Exception:
+            return None
+
+    # =========================================================================
+    # Attribution
+    # =========================================================================
+
+    def get_attribution(
+        self, campaign_id: int, method: str = "linear", days: int = 30
+    ) -> Dict[str, Any]:
+        """Return multi-touch attribution breakdown for a campaign."""
+        result = self._api_get(
+            f"/api/attribution/{campaign_id}",
+            params={"method": method, "days": days},
+        )
+        if result:
+            return result
+        # Mock fallback
+        from src.bandit_ads.attribution import AttributionEngine
+        engine = AttributionEngine()
+        channels = engine.calculate(campaign_id, method=method, days=days)
+        return {"campaign_id": campaign_id, "method": method, "days": days, "channels": channels}

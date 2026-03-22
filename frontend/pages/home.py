@@ -28,6 +28,7 @@ def render(greeting: str):
     # Greeting
     # -----------------------------------------------------------------------
     st.markdown(f'<h1 class="greeting">{greeting} 👋</h1>', unsafe_allow_html=True)
+    st.caption("Budget Command Center · Real-time ML optimization · Explainable decisions · Causal MMM")
 
     # Time range picker (compact, top-right feel)
     col_title, col_range = st.columns([3, 1])
@@ -353,23 +354,21 @@ def _render_recent_changes(decisions: list) -> None:
         impact_color = "#22C55E" if impact > 0 else "#EF4444" if impact < 0 else "#717182"
         impact_str = f"{'+' if impact >= 0 else ''}{impact:.1f}%"
 
-        # First sentence of explanation, if present
         explanation = d.get("explanation") or ""
         short_exp = explanation.split(".")[0] + "." if explanation else ""
 
-        st.markdown(f"""
-        <div style="padding: 10px 0; border-bottom: 1px solid #F0F0F0;">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <div style="flex:1;">
-                    <p style="margin:0; font-size:0.85rem; font-weight:600;">{d.get('description', '—')}</p>
-                    <p style="margin:2px 0 0 0; font-size:0.75rem; color:#717182;">
-                        {d.get('campaign_name', '')} · {time_str}
-                    </p>
-                    {f'<p style="margin:4px 0 0 0; font-size:0.75rem; color:#717182;">{short_exp}</p>' if short_exp else ''}
-                </div>
-                <span style="margin-left:12px; font-weight:600; color:{impact_color}; font-size:0.85rem; white-space:nowrap;">
-                    {impact_str}
-                </span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        left_col, right_col = st.columns([5, 1])
+        with left_col:
+            st.markdown(
+                f"**{d.get('description', '—')}**  \n"
+                f"<span style='font-size:0.75rem; color:#717182;'>"
+                f"{d.get('campaign_name', '')} · {time_str}</span>"
+                + (f"  \n<span style='font-size:0.75rem; color:#717182;'>{short_exp}</span>" if short_exp else ""),
+                unsafe_allow_html=True,
+            )
+        with right_col:
+            st.markdown(
+                f"<div style='text-align:right; font-weight:600; color:{impact_color}; font-size:0.85rem;'>{impact_str}</div>",
+                unsafe_allow_html=True,
+            )
+        st.divider()
