@@ -5,6 +5,13 @@ Accessible on all pages.
 
 import streamlit as st
 from typing import Optional
+import sys
+from pathlib import Path
+
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from frontend.services.data_service import DataService
 
 
 def render_chat_widget(campaign_id: Optional[int] = None, context: str = ""):
@@ -70,37 +77,36 @@ def render_chat_widget(campaign_id: Optional[int] = None, context: str = ""):
                         'role': 'user',
                         'content': suggestion
                     })
-                    # TODO: Call orchestrator API
+                    data_service = DataService()
+                    result = data_service.query_orchestrator(suggestion, campaign_id)
                     st.session_state.chat_messages.append({
                         'role': 'assistant',
-                        'content': f"Based on {context}, I can help explain that. (Orchestrator integration pending)"
+                        'content': result.get('response', 'No response received.')
                     })
                     st.rerun()
-        
+
         st.divider()
-        
+
         # Input
         query = st.text_input(
             "Ask a question...",
             key="sidebar_chat_input",
             placeholder="e.g., Why did ROAS drop last week?"
         )
-        
+
         col1, col2 = st.columns([1, 1])
         with col1:
             if st.button("Send", use_container_width=True, key="chat_send"):
                 if query:
-                    # Add user message
                     st.session_state.chat_messages.append({
                         'role': 'user',
                         'content': query
                     })
-                    
-                    # TODO: Call orchestrator API
-                    # For now, show placeholder response
+                    data_service = DataService()
+                    result = data_service.query_orchestrator(query, campaign_id)
                     st.session_state.chat_messages.append({
                         'role': 'assistant',
-                        'content': f"Based on {context}, I can help explain that. (Orchestrator integration pending)"
+                        'content': result.get('response', 'No response received.')
                     })
                     st.rerun()
         

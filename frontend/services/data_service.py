@@ -1065,27 +1065,12 @@ class DataService:
             return self._mock_recommendations(status)
         
         try:
-            # Use recommendation manager
-            recs = self.recommendation_manager.get_recommendations(status=status)
-            return [
-                {
-                    'id': r.id,
-                    'title': r.title,
-                    'description': r.description,
-                    'type': r.recommendation_type,
-                    'campaign_name': f"Campaign {r.campaign_id}",
-                    'confidence': r.confidence_score or 0.7,
-                    'current_value': r.details.get('current_value'),
-                    'proposed_value': r.details.get('proposed_value'),
-                    'expected_impact': r.details.get('expected_impact'),
-                    'explanation': r.details.get('explanation', ''),
-                    'created_at': r.created_at.strftime('%b %d, %Y') if r.created_at else ''
-                }
-                for r in recs
-            ]
+            recs = self._api_get("/api/recommendations", params={"status": status})
+            if recs is not None:
+                return recs
         except Exception as e:
             print(f"Error getting recommendations: {e}")
-            return self._mock_recommendations(status)
+        return self._mock_recommendations(status)
     
     def _mock_recommendations(self, status: str) -> List[Dict[str, Any]]:
         """Return mock recommendations."""
@@ -1150,15 +1135,15 @@ class DataService:
         """Approve a recommendation."""
         if not self.use_mock:
             try:
-                self.recommendation_manager.approve_recommendation(rec_id)
+                self._api_post(f"/api/recommendations/{rec_id}/approve")
             except Exception as e:
                 print(f"Error approving recommendation: {e}")
-    
+
     def reject_recommendation(self, rec_id: int):
         """Reject a recommendation."""
         if not self.use_mock:
             try:
-                self.recommendation_manager.reject_recommendation(rec_id)
+                self._api_post(f"/api/recommendations/{rec_id}/reject")
             except Exception as e:
                 print(f"Error rejecting recommendation: {e}")
     

@@ -38,7 +38,7 @@ async def get_recent_decisions(
         # Get allocation changes
         changes = tracker.get_allocation_history(
             campaign_id=campaign_id,
-            limit=limit
+            days=30
         )
 
         decisions = []
@@ -77,7 +77,7 @@ async def get_factor_attribution(
 
         changes = tracker.get_allocation_history(
             campaign_id=campaign_id,
-            limit=limit
+            days=30
         )
 
         # Aggregate factor counts and impacts

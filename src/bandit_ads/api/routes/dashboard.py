@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_, desc
 
 from src.bandit_ads.database import get_db_manager, Campaign, Metric
+from src.bandit_ads.recommendations import Recommendation
 from src.bandit_ads.utils import get_logger
 
 logger = get_logger('api.dashboard')
@@ -55,8 +56,10 @@ async def get_dashboard_summary():
             roas_yesterday = revenue_yesterday / total_spend_yesterday if total_spend_yesterday > 0 else 0.0
             roas_trend = ((avg_roas - roas_yesterday) / roas_yesterday * 100) if roas_yesterday > 0 else 0.0
             
-            # Get pending recommendations count (placeholder - will be implemented)
-            pending_recommendations = 0  # TODO: Get from recommendations service
+            # Get pending recommendations count
+            pending_recommendations = session.query(Recommendation).filter(
+                Recommendation.status == "pending"
+            ).count()
             
             return {
                 "total_spend_today": total_spend_today,

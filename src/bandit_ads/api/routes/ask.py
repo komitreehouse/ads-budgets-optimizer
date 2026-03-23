@@ -41,7 +41,7 @@ async def ask_question(request: AskRequest):
         from src.bandit_ads.orchestrator import OrchestratorAgent
         orchestrator = OrchestratorAgent()
 
-        result = orchestrator.process_query(
+        result = await orchestrator.process_query(
             query=request.query,
             campaign_id=request.campaign_id
         )
