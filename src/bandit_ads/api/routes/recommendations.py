@@ -72,6 +72,30 @@ async def get_pending_recommendations():
         return []
 
 
+@router.post("")
+async def create_recommendation(body: dict):
+    """Create a new recommendation (e.g. from a scenario plan)."""
+    try:
+        from src.bandit_ads.recommendations import Recommendation
+        db_manager = get_db_manager()
+        with db_manager.get_session() as session:
+            rec = Recommendation(
+                campaign_id=body.get("campaign_id", 0),
+                recommendation_type=body.get("type", "allocation_change"),
+                title=body.get("title", "Scenario Plan"),
+                description=body.get("description", ""),
+                details=json.dumps(body.get("details", {})),
+                status="pending",
+            )
+            session.add(rec)
+            session.commit()
+            session.refresh(rec)
+            return {"id": rec.id, "success": True}
+    except Exception as e:
+        logger.error(f"Error creating recommendation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{recommendation_id}/approve")
 async def approve_recommendation(recommendation_id: int):
     """Approve a recommendation."""

@@ -734,11 +734,10 @@ def render_campaign_settings(campaign_id: int, settings: Dict[str, Any], data_se
                             'content': query
                         })
                         
-                        # TODO: Call orchestrator API
-                        # For now, show placeholder response
+                        result = data_service.query_orchestrator(query, campaign_id)
                         st.session_state.chat_messages.append({
                             'role': 'assistant',
-                            'content': f"Based on the campaign data, I can help explain that. (Orchestrator integration pending)"
+                            'content': result.get('response', 'No response received.')
                         })
                         st.rerun()
             

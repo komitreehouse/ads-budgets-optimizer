@@ -1151,6 +1151,29 @@ class DataService:
         """Modify a recommendation."""
         # Store modification - would update the recommendation in DB
         pass
+
+    def create_scenario_recommendation(self, campaign_id: int, proposed_budgets: dict, horizon_days: int = 30):
+        """Save a scenario plan as a pending recommendation."""
+        title = f"Scenario Plan — {len(proposed_budgets)} channel reallocation"
+        description = "Budget reallocation scenario created from the Planning page."
+        details = {
+            "proposed_budgets": proposed_budgets,
+            "horizon_days": horizon_days,
+            "expected_impact": "See Planning page simulation for projected outcomes.",
+            "current_value": "Current allocation",
+            "proposed_value": f"{len(proposed_budgets)} channels adjusted",
+        }
+        if not self.use_mock:
+            try:
+                self._api_post("/api/recommendations", {
+                    "campaign_id": campaign_id,
+                    "type": "allocation_change",
+                    "title": title,
+                    "description": description,
+                    "details": details,
+                })
+            except Exception as e:
+                print(f"Error creating scenario recommendation: {e}")
     
     # =========================================================================
     # Optimizer

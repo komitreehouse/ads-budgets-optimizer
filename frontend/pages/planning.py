@@ -171,11 +171,14 @@ def render():
         # Apply as recommendation
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("✓ Apply this plan as a Recommendation", type="primary"):
+            data_service.create_scenario_recommendation(campaign_id, proposed_budgets, horizon)
             st.success(
                 "📋 Plan saved as a pending recommendation. "
                 "Review it in the Actions page before applying."
             )
-            # TODO: call data_service.create_scenario_recommendation(campaign_id, proposed_budgets)
+            if st.button("→ Go to Action Center", key="plan_goto_actions"):
+                st.session_state.current_page = "recommendations"
+                st.rerun()
 
     st.markdown("---")
 
