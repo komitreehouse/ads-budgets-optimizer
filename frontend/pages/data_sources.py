@@ -55,22 +55,12 @@ def render():
                 else (error or "Configure credentials to connect")
             )
 
-            st.markdown(f"""
-            <div class="card" style="border-top: 3px solid {meta['color']}; min-height: 120px;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 1.5rem;">{meta['icon']}</span>
-                        <span style="font-weight: 600; font-size: 1rem;">{meta['name']}</span>
-                    </div>
-                    <span style="background: {badge_color}20; color: {badge_color};
-                                 padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem;
-                                 font-weight: 600;">
-                        {badge_label}
-                    </span>
-                </div>
-                <p style="margin: 10px 0 0 0; font-size: 0.8rem; color: #717182;">{sync_line}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            name_col, badge_col = st.columns([2, 1])
+            with name_col:
+                st.markdown(f"<span style='font-size:1.5rem;'>{meta['icon']}</span> **{meta['name']}**", unsafe_allow_html=True)
+            with badge_col:
+                st.markdown(f"<div style='text-align:right;'><span style='background:{badge_color}20; color:{badge_color}; padding:2px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;'>{badge_label}</span></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='margin:4px 0 8px 0; font-size:0.8rem; color:#717182; border-top:3px solid {meta['color']}; padding-top:6px;'>{sync_line}</p>", unsafe_allow_html=True)
 
             btn_label = "🔄 Refresh" if connected else "🔗 Connect"
             btn_type = "secondary" if connected else "primary"

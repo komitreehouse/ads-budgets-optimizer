@@ -221,20 +221,23 @@ def render(greeting: str):
             pacing_pct = (ch["spent"] / ch["budget"] * 100) if ch["budget"] > 0 else 0
             pace_color = "#EF4444" if pacing_pct > 110 else "#F59E0B" if pacing_pct < 80 else "#22C55E"
 
-            st.markdown(f"""
-            <div style="padding: 10px 0; border-bottom: 1px solid #F0F0F0;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:0.85rem; font-weight:600;">{ch['icon']} {ch['name']}</span>
-                    <span style="font-size:0.75rem; color:{pace_color};">{pacing_pct:.0f}% pacing</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:0.8rem; color:#717182;">
-                    <span>${ch['spent']:,.0f} spent</span>
-                    <span>ROAS {ch['roas']:.2f}x
-                        <span style="color:{trend_color};">{trend_arrow}{abs(ch['roas_trend']):.1f}%</span>
-                    </span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            name_col, pace_col = st.columns([3, 1])
+            with name_col:
+                st.markdown(f"**{ch['icon']} {ch['name']}**")
+            with pace_col:
+                st.markdown(
+                    f"<div style='text-align:right; font-size:0.75rem; color:{pace_color};'>{pacing_pct:.0f}% pacing</div>",
+                    unsafe_allow_html=True,
+                )
+            spent_col, roas_col = st.columns([2, 2])
+            with spent_col:
+                st.markdown(f"<span style='font-size:0.8rem; color:#717182;'>${ch['spent']:,.0f} spent</span>", unsafe_allow_html=True)
+            with roas_col:
+                st.markdown(
+                    f"<div style='text-align:right; font-size:0.8rem; color:#717182;'>ROAS {ch['roas']:.2f}x <span style='color:{trend_color};'>{trend_arrow}{abs(ch['roas_trend']):.1f}%</span></div>",
+                    unsafe_allow_html=True,
+                )
+            st.markdown("<hr style='margin:4px 0; border-color:#F0F0F0;'>", unsafe_allow_html=True)
 
         # View all channels
         if st.button("View campaign details →", key="home_view_campaigns", use_container_width=True):
@@ -319,18 +322,12 @@ def _render_pacing_alerts(channel_data: list, data_service: DataService) -> None
             else:
                 icon, msg, color = "🟡", f"underpacing at {pct:.0f}%", "#F59E0B"
 
-            st.markdown(f"""
-            <div style="padding: 10px 12px; border-left: 3px solid {color};
-                        background: {color}10; border-radius: 0 8px 8px 0; margin-bottom: 8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:600; font-size:0.9rem;">{icon} {ch['name']}</span>
-                    <span style="font-size:0.8rem; color:{color}; font-weight:600;">{msg}</span>
-                </div>
-                <p style="margin:4px 0 0 0; font-size:0.8rem; color:#717182;">
-                    Spent ${ch['spent']:,.0f} of ${ch['budget']:,.0f}
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            name_col, msg_col = st.columns([2, 2])
+            with name_col:
+                st.markdown(f"<span style='font-weight:600; font-size:0.9rem;'>{icon} {ch['name']}</span>", unsafe_allow_html=True)
+            with msg_col:
+                st.markdown(f"<div style='text-align:right; font-size:0.8rem; color:{color}; font-weight:600;'>{msg}</div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='margin:0 0 8px 0; font-size:0.8rem; color:#717182; border-left:3px solid {color}; padding-left:8px; background:{color}10;'>Spent ${ch['spent']:,.0f} of ${ch['budget']:,.0f}</p>", unsafe_allow_html=True)
 
         if st.button("Adjust pacing →", key="home_adjust_pacing", use_container_width=True):
             st.session_state.current_page = "recommendations"

@@ -162,49 +162,33 @@ def _render_action_card(rec: dict, data_service: DataService, show_actions: bool
     created_at = rec.get("created_at", "")
 
     with st.container():
-        # Card header
-        st.markdown(f"""
-        <div class="recommendation-card">
-            <div style="display:flex; justify-content:space-between; align-items:start; gap:12px;">
-                <div style="display:flex; gap:12px; align-items:start; flex:1;">
-                    <span style="font-size:1.5rem; line-height:1;">{icon}</span>
-                    <div style="flex:1;">
-                        <h4 style="margin:0; font-size:1.05rem; font-weight:600;">{rec['title']}</h4>
-                        <p style="margin:3px 0 0 0; font-size:0.82rem; color:#717182;">
-                            {campaign_name} · {created_at}
-                        </p>
-                    </div>
-                </div>
-                <div style="text-align:right; min-width:110px;">
-                    <div style="background:{conf_color}20; color:{conf_color}; padding:3px 10px;
-                                border-radius:9999px; font-size:0.75rem; font-weight:600; display:inline-block;">
-                        {confidence:.0%} confidence
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Card header — use columns to avoid nested flex divs
+        title_col, conf_col = st.columns([4, 1])
+        with title_col:
+            st.markdown(
+                f"<span style='font-size:1.5rem;'>{icon}</span> "
+                f"**{rec['title']}**  \n"
+                f"<span style='font-size:0.82rem; color:#717182;'>{campaign_name} · {created_at}</span>",
+                unsafe_allow_html=True,
+            )
+        with conf_col:
+            st.markdown(
+                f"<div style='text-align:right;'><span style='background:{conf_color}20; color:{conf_color}; padding:3px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;'>{confidence:.0%} confidence</span></div>",
+                unsafe_allow_html=True,
+            )
 
         if not compact:
-            # Impact line
+            # Impact + description
             if impact_str:
-                st.markdown(f"""
-                <div style="display:flex; align-items:center; gap:16px; padding: 8px 0;">
-                    <span style="font-size:0.9rem; font-weight:600; color:#22C55E;">{impact_str}</span>
-                    <span style="font-size:0.85rem; color:#717182;">{rec.get('description', '')[:120]}{'...' if len(rec.get('description','')) > 120 else ''}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                desc = rec.get('description', '')[:120] + ('...' if len(rec.get('description', '')) > 120 else '')
+                st.markdown(
+                    f"<span style='font-size:0.9rem; font-weight:600; color:#22C55E;'>{impact_str}</span>"
+                    f"<span style='font-size:0.85rem; color:#717182; margin-left:12px;'>{desc}</span>",
+                    unsafe_allow_html=True,
+                )
 
-            # Confidence bar
-            st.markdown(f"""
-            <div style="display:flex; align-items:center; gap:8px; margin:4px 0 8px 0;">
-                <span style="font-size:0.75rem; color:#717182; min-width:80px;">Confidence</span>
-                <div style="flex:1; height:6px; background:#E5E5E5; border-radius:3px;">
-                    <div style="height:100%; width:{confidence*100:.0f}%; background:{conf_color}; border-radius:3px;"></div>
-                </div>
-                <span style="font-size:0.75rem; color:{conf_color}; min-width:36px;">{confidence:.0%}</span>
-            </div>
-            """, unsafe_allow_html=True)
+            # Confidence bar — use st.progress for native rendering
+            st.progress(confidence, text=f"Confidence: {confidence:.0%}")
 
             # Current → Proposed
             if rec.get("current_value") is not None and rec.get("proposed_value") is not None:
