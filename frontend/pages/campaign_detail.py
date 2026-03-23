@@ -492,39 +492,121 @@ def render(campaign_id: int):
     st.divider()
     
     # ==========================================================================
-    # AUDIENCE / GEO / CREATIVE INSIGHTS (MMM-lite)
+    # MMM INSIGHTS
     # ==========================================================================
-    st.markdown("### Audience / Geo / Creative Insights")
-    st.caption("Directional insights from MMM-lite + platform data")
-    
-    # Placeholder for insights
-    # TODO: Add actual insights from MMM analysis
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("**Top Audiences**")
-        st.info("""
-        - Audience A: +15% ROAS
-        - Audience B: +8% ROAS
-        - Audience C: -5% ROAS
-        """)
-    
-    with col2:
-        st.markdown("**Top Geos**")
-        st.info("""
-        - US: +12% efficiency
-        - UK: +5% efficiency
-        - CA: -3% efficiency
-        """)
-    
-    with col3:
-        st.markdown("**Top Creatives**")
-        st.info("""
-        - Creative A: +20% CTR
-        - Creative B: +10% CVR
-        - Creative C: Baseline
-        """)
-    
+    st.markdown("### MMM Insights")
+    st.caption("Channel saturation scores, efficiency analysis, and budget reallocation recommendations from the Media Mix Model")
+
+    try:
+        mmm_channels = data_service.get_mmm_channel_summary(campaign_id=campaign_id, days=30)
+        mmm_recs = data_service.get_mmm_budget_recommendations(campaign_id=campaign_id, days=30)
+    except Exception:
+        mmm_channels = []
+        mmm_recs = {}
+
+    if mmm_channels:
+        import plotly.graph_objects as go
+
+        CHANNEL_COLORS = {
+            "Google Search": "#4285F4", "Meta Social": "#1877F2",
+            "Programmatic": "#00A98F", "Video": "#9b4819",
+            "Display": "#F59E0B", "Email": "#8B5CF6",
+        }
+
+        # Saturation gauge row
+        sat_cols = st.columns(len(mmm_channels))
+        for i, ch in enumerate(mmm_channels):
+            sat = ch.get("saturation_score", 0)
+            color = "#EF4444" if sat > 0.75 else "#F59E0B" if sat > 0.5 else "#22C55E"
+            with sat_cols[i]:
+                st.markdown(f"""
+                <div style="text-align:center; padding:10px 8px; background:#F9F9F9; border-radius:8px;
+                            border-top:3px solid {CHANNEL_COLORS.get(ch['channel'], '#717182')};">
+                    <p style="margin:0; font-size:0.72rem; color:#717182; font-weight:600;">{ch['channel']}</p>
+                    <p style="margin:4px 0; font-size:1.3rem; font-weight:700; color:{color};">{sat:.0%}</p>
+                    <p style="margin:0; font-size:0.68rem; color:#9CA3AF;">saturation</p>
+                    <p style="margin:4px 0 0; font-size:0.78rem; color:#1a1a1a; font-weight:600;">{ch.get('roas', 0):.2f}x ROAS</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Efficiency vs saturation scatter
+        import pandas as pd
+        df_mmm = pd.DataFrame(mmm_channels)
+        fig_mmm = go.Figure()
+        for _, row in df_mmm.iterrows():
+            ch = row["channel"]
+            color = CHANNEL_COLORS.get(ch, "#717182")
+            fig_mmm.add_trace(go.Scatter(
+                x=[row["saturation_score"]],
+                y=[row["efficiency_score"]],
+                mode="markers+text",
+                text=[ch],
+                textposition="top center",
+                marker=dict(size=max(10, min(40, row.get("spend", 1000) / 500)),
+                            color=color, opacity=0.85,
+                            line=dict(width=1.5, color="white")),
+                name=ch,
+                hovertemplate=(
+                    f"<b>{ch}</b><br>Saturation: {row['saturation_score']:.0%}<br>"
+                    f"Efficiency: {row['efficiency_score']:.2f}x<br>"
+                    f"ROAS: {row['roas']:.2f}x<br>"
+                    f"<i>{row.get('recommendation', '')}</i><extra></extra>"
+                ),
+                showlegend=False,
+            ))
+        fig_mmm.add_vline(x=0.6, line_dash="dot", line_color="#F59E0B", line_width=1.5,
+                          annotation_text="Saturation threshold", annotation_position="top right")
+        fig_mmm.add_hline(y=1.0, line_dash="dot", line_color="#9CA3AF", line_width=1)
+        fig_mmm.update_layout(
+            height=280,
+            margin=dict(t=20, b=30, l=20, r=20),
+            paper_bgcolor="white", plot_bgcolor="white",
+            xaxis=dict(title="Saturation Score", tickformat=".0%", range=[0, 1], gridcolor="#F0F0F0"),
+            yaxis=dict(title="Efficiency (vs avg ROAS)", gridcolor="#F0F0F0"),
+        )
+        st.plotly_chart(fig_mmm, use_container_width=True)
+
+        # Recommendations
+        rec_channels = mmm_recs.get("channels", {})
+        if rec_channels:
+            st.markdown("#### Recommended Reallocation")
+            uplift = mmm_recs.get("roas_uplift_pct", 0)
+            curr_roas = mmm_recs.get("current_blended_roas", 0)
+            proj_roas = mmm_recs.get("projected_blended_roas", 0)
+            st.caption(f"Optimal allocation could lift blended ROAS from **{curr_roas:.2f}x → {proj_roas:.2f}x** (+{uplift:.1f}%)")
+
+            rec_c = st.columns(min(len(rec_channels), 4))
+            for i, (ch, rec) in enumerate(rec_channels.items()):
+                change = rec.get("change_pct", 0)
+                arrow = "▲" if change > 5 else "▼" if change < -5 else "→"
+                c_color = "#22C55E" if change > 5 else "#EF4444" if change < -5 else "#717182"
+                with rec_c[i % 4]:
+                    st.markdown(f"""
+                    <div style="padding:8px; border:1px solid #E5E7EB; border-radius:8px; margin-bottom:4px;">
+                        <p style="margin:0; font-size:0.75rem; font-weight:700;">{ch}</p>
+                        <p style="margin:2px 0; font-size:0.85rem; color:{c_color}; font-weight:600;">
+                            {arrow} ${rec['recommended_spend']:,.0f}
+                            <span style="font-size:0.7rem;">({'+' if change >= 0 else ''}{change:.0f}%)</span>
+                        </p>
+                        <p style="margin:0; font-size:0.68rem; color:#9CA3AF;">{rec.get('rationale', '')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn_col, _ = st.columns([2, 4])
+            with btn_col:
+                if st.button("✓ Save as Recommendation", key="mmm_save_rec", type="primary", use_container_width=True):
+                    data_service.create_scenario_recommendation(
+                        campaign_id=campaign_id,
+                        proposed_budgets={ch: r["recommended_spend"] for ch, r in rec_channels.items()},
+                    )
+                    st.success("Saved to Action Center.")
+    else:
+        st.info("MMM analysis will populate once the optimizer has run and collected channel performance data.")
+
+    st.markdown("**→ Full cross-channel MMM analysis available in the [MMM Insights](#) page.**")
     st.divider()
 
     # ==========================================================================
