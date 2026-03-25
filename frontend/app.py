@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # Import pages after config
-from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding, incrementality, data_sources, planning, mmm_insights
+from pages import home, campaigns, campaign_detail, optimizer, ask, recommendations, onboarding, incrementality, data_sources, planning, mmm_insights, meridian_model
 from frontend.components.chat_widget import render_chat_widget
 
 # Custom CSS for IPSA brand styling
@@ -617,6 +617,7 @@ def render_sidebar():
             "✓ Actions": "recommendations",
             "📈 Planning": "planning",
             "🧮 MMM Insights": "mmm_insights",
+            "🔬 Meridian Model": "meridian_model",
             "📊 Campaigns": "campaigns",
             "🧪 Incrementality": "incrementality",
             "💬 Ask": "ask",
@@ -741,6 +742,8 @@ def main():
         planning.render()
     elif current_page == "mmm_insights":
         mmm_insights.render()
+    elif current_page == "meridian_model":
+        meridian_model.render()
     elif current_page == "campaigns":
         campaigns.render()
     elif current_page == "campaign_detail":

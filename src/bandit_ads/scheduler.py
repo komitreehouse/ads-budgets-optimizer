@@ -235,12 +235,30 @@ def get_scheduler(timezone: str = 'UTC', register_incrementality_jobs: bool = Tr
     global _scheduler
     if _scheduler is None:
         _scheduler = DataScheduler(timezone)
-        
+
         if register_incrementality_jobs:
             try:
                 from src.bandit_ads.incrementality_jobs import register_incrementality_jobs
                 register_incrementality_jobs(_scheduler)
             except ImportError as e:
                 logger.warning(f"Could not register incrementality jobs: {e}")
-    
+
+        # Register daily Meridian model training if configured
+        try:
+            from src.bandit_ads.utils import ConfigManager
+            cm = ConfigManager()
+            if cm.get("mmm.engine", "rule_based") == "meridian":
+                schedule = cm.get("mmm.meridian.training_schedule", "daily")
+                if schedule == "daily":
+                    from src.bandit_ads.meridian_trainer import train_all_campaigns
+                    _scheduler.add_daily_job(
+                        func=train_all_campaigns,
+                        job_id="meridian_daily_training",
+                        hour=3,
+                        minute=0,
+                    )
+                    logger.info("Registered daily Meridian training job (03:00 UTC)")
+        except Exception as e:
+            logger.debug(f"Meridian scheduler registration skipped: {e}")
+
     return _scheduler

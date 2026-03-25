@@ -34,3 +34,10 @@ pytrends==4.9.2
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
+# Meridian MMM (Bayesian media mix modeling)
+google-meridian>=1.0.0
+jax>=0.4.20
+jaxlib>=0.4.20
+numpyro>=0.13.0
+arviz>=0.17.0
+xarray>=2024.1.0

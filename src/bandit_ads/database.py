@@ -351,17 +351,18 @@ class DatabaseManager:
         finally:
             session.close()
     
-    def get_session(self) -> Session:
+    def get_raw_session(self) -> Session:
         """
         Get a database session (non-context manager version).
-        
-        Note: You must call session.close() when done.
-        
+
+        Note: You must call session.commit() and session.close() when done.
+        Prefer get_session() context manager for auto-commit/rollback.
+
         Usage:
-            session = db_manager.get_session()
+            session = db_manager.get_raw_session()
             try:
                 # Use session
-                pass
+                session.commit()
             finally:
                 session.close()
         """

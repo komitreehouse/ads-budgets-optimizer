@@ -22,42 +22,10 @@ class MMMDataLoader:
     ----------------------
     Uses Ridge Regression for MMM coefficient estimation with rule-based
     configurable factors for seasonality, ad stock, and diminishing returns.
-    This approach is intentional for production stability and real-time performance.
-    
-    FUTURE BAYESIAN INTEGRATION POINT:
-    ----------------------------------
-    This class is a natural location for adding Bayesian uncertainty quantification
-    to MMM coefficients. When variational inference (VI) is added:
-    
-    1. COEFFICIENT ESTIMATION WITH UNCERTAINTY:
-       Current: Point estimates via Ridge Regression (mmm_coefficients dict)
-       Future: Posterior distributions via VI, storing both mean and variance:
-       # self.mmm_posteriors = {
-       #     'google_search': {'mean': 2.1, 'std': 0.3, 'credible_interval': (1.5, 2.7)},
-       #     ...
-       # }
-    
-    2. INCREMENTAL RESULTS AS PRIORS:
-       When incrementality experiments complete, their results should update
-       the Bayesian priors for coefficient estimation:
-       # def incorporate_incrementality_prior(self, channel, lift_result):
-       #     '''Use incrementality lift as informative prior for channel coefficient'''
-       #     prior_mean = lift_result['incremental_roas']
-       #     prior_std = self._ci_to_std(lift_result['confidence_interval'])
-       #     self.bayesian_priors[channel] = NormalPrior(prior_mean, prior_std)
-    
-    3. INTEGRATION WITH get_arm_priors():
-       The get_arm_priors() method should return uncertainty information:
-       # return {
-       #     'alpha': ..., 'beta': ...,
-       #     'coefficient_mean': posterior.mean,
-       #     'coefficient_std': posterior.std,
-       #     'credible_interval': posterior.hdi(0.95)
-       # }
-    
-    4. NO NEW DEPENDENCIES YET:
-       Current stack: Ridge Regression (scikit-learn or manual)
-       Future stack: Add NumPyro or TFP for lightweight VI when ready
+
+    Bayesian coefficient estimation with full posteriors is available via the
+    Meridian pipeline (meridian_trainer.py, meridian_data.py). get_arm_priors()
+    falls back to Meridian posteriors via _get_meridian_prior() when available.
     """
 
     def __init__(self):
@@ -236,25 +204,8 @@ class MMMDataLoader:
         Returns:
             dict: Prior parameters for beta distribution
         
-        FUTURE BAYESIAN INTEGRATION POINT:
-        ----------------------------------
-        This method converts point estimates to Beta priors using method of moments.
-        When a Bayesian layer is added, this should be extended to:
-        
-        1. Return full posterior uncertainty from Bayesian regression:
-           # if self.bayesian_posterior is not None:
-           #     posterior = self.bayesian_posterior.get(arm_key)
-           #     return {
-           #         'alpha': ..., 'beta': ...,
-           #         'coefficient_posterior': posterior,
-           #         'credible_interval_95': posterior.hdi(0.95),
-           #         'uncertainty_source': 'bayesian_vi'  # vs 'method_of_moments'
-           #     }
-        
-        2. Incorporate incrementality priors when available:
-           # if arm_key in self.incrementality_priors:
-           #     inc_prior = self.incrementality_priors[arm_key]
-           #     return self._combine_priors(historical_prior, inc_prior)
+        Bayesian integration: when no historical match is found, this method
+        falls back to _get_meridian_prior() for Meridian-derived posteriors.
         """
         # Create key from arm attributes
         platform = arm.platform.lower().replace(' ', '_')
@@ -296,6 +247,11 @@ class MMMDataLoader:
                     'historical_performance': coeff
                 }
 
+        # Try Meridian posteriors if available
+        meridian_prior = self._get_meridian_prior(platform, channel)
+        if meridian_prior:
+            return meridian_prior
+
         # Ultimate fallback
         return {
             'alpha': 1.0,
@@ -303,6 +259,43 @@ class MMMDataLoader:
             'expected_roas': 1.2,
             'historical_performance': None
         }
+
+    def _get_meridian_prior(self, platform: str, channel: str):
+        """
+        Try to get richer priors from a trained Meridian model.
+        Returns None if Meridian is not available or no model is trained.
+        """
+        try:
+            from src.bandit_ads.meridian_bridge import extract_channel_posteriors, posteriors_to_beta_priors
+            posteriors = extract_channel_posteriors()
+            if not posteriors:
+                return None
+
+            # Match by channel name
+            display = channel.replace('_', ' ').title()
+            if display not in posteriors:
+                # Try platform + channel
+                display = f"{platform.replace('_', ' ').title()} {channel.replace('_', ' ').title()}"
+
+            if display not in posteriors:
+                return None
+
+            post = posteriors[display]
+            beta_priors = posteriors_to_beta_priors({display: post})
+            bp = beta_priors.get(display)
+            if not bp:
+                return None
+
+            return {
+                'alpha': bp['alpha'],
+                'beta': bp['beta'],
+                'expected_roas': post['roas_mean'],
+                'credible_interval_95': (post['roas_lower'], post['roas_upper']),
+                'uncertainty_source': 'meridian',
+                'historical_performance': None,
+            }
+        except Exception:
+            return None
 
     def get_seasonal_multiplier(self, date=None, channel=None):
         """

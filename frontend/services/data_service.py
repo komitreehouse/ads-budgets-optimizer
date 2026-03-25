@@ -2342,8 +2342,8 @@ Would you like me to provide more specific details? Try asking:
             result = data.get("channels") if data else None
         if result is not None:
             return result
-        from src.bandit_ads.mmm_insights import MMMInsightsEngine
-        return MMMInsightsEngine().get_channel_summary(campaign_id=campaign_id, days=days)
+        from src.bandit_ads.meridian_insights import MMMInsightsRouter
+        return MMMInsightsRouter().get_channel_summary(campaign_id=campaign_id, days=days)
 
     def get_mmm_saturation_curves(self, campaign_id: int = None, days: int = 30):
         """Saturation curves per channel."""
@@ -2351,8 +2351,8 @@ Would you like me to provide more specific details? Try asking:
         result = self._api_get(f"/api/mmm/{cid}/saturation-curves", params={"days": days})
         if result:
             return result
-        from src.bandit_ads.mmm_insights import MMMInsightsEngine
-        return MMMInsightsEngine().get_saturation_curves(campaign_id=campaign_id, days=days)
+        from src.bandit_ads.meridian_insights import MMMInsightsRouter
+        return MMMInsightsRouter().get_saturation_curves(campaign_id=campaign_id, days=days)
 
     def get_mmm_budget_recommendations(self, campaign_id: int = None, total_budget: float = None, days: int = 30):
         """Optimal budget allocation recommendations."""
@@ -2363,13 +2363,23 @@ Would you like me to provide more specific details? Try asking:
         result = self._api_get(f"/api/mmm/{cid}/budget-recommendations", params=params)
         if result:
             return result
-        from src.bandit_ads.mmm_insights import MMMInsightsEngine
-        return MMMInsightsEngine().get_budget_recommendations(campaign_id=campaign_id, total_budget=total_budget, days=days)
+        from src.bandit_ads.meridian_insights import MMMInsightsRouter
+        return MMMInsightsRouter().get_budget_recommendations(campaign_id=campaign_id, total_budget=total_budget, days=days)
 
     def get_mmm_cross_platform(self, days: int = 30):
         """Holistic cross-channel MMM view."""
         result = self._api_get("/api/mmm/cross-platform", params={"days": days})
         if result:
             return result
-        from src.bandit_ads.mmm_insights import MMMInsightsEngine
-        return MMMInsightsEngine().get_cross_platform_summary(days=days)
+        from src.bandit_ads.meridian_insights import MMMInsightsRouter
+        return MMMInsightsRouter().get_cross_platform_summary(days=days)
+
+    def get_meridian_training_status(self, campaign_id: int = None):
+        """Check Meridian model training status."""
+        params = {}
+        if campaign_id:
+            params["campaign_id"] = campaign_id
+        result = self._api_get("/api/mmm/training-status", params=params)
+        if result:
+            return result
+        return {"trained": False}

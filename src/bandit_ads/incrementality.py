@@ -12,69 +12,10 @@ Uses frequentist statistics (normal approximation, permutation tests) for
 lift calculation and confidence intervals. Results feed into IncrementalityAwareBandit
 to adjust Thompson Sampling priors.
 
-FUTURE BAYESIAN INTEGRATION POINTS
-==================================
-This module is central to the future Bayesian layer integration. When VI is added:
-
-1. INCREMENTALITY → BAYESIAN PRIORS:
-   Experiment results (lift_percent, confidence_intervals, iROAS) should become
-   informative priors for Bayesian regression coefficients:
-   
-   # In calculate_incrementality() or calculate_incremental_roas():
-   # return {
-   #     ...existing results...,
-   #     'bayesian_prior': {
-   #         'mean': incremental_roas,
-   #         'std': self._ci_to_std(confidence_interval),
-   #         'evidence_strength': treatment_users + control_users,
-   #         'prior_type': 'experiment_derived'
-   #     }
-   # }
-   
-   This allows the Bayesian model to start with experimentally-validated priors
-   rather than uninformative defaults.
-
-2. BAYESIAN UNCERTAINTY → THOMPSON SAMPLING:
-   Bayesian posterior uncertainty on MMM coefficients should feed into
-   IncrementalityAwareBandit for richer, calibrated exploration:
-   
-   # In IncrementalityAwareBandit.incorporate_incrementality():
-   # bayesian_posterior = self.bayesian_layer.get_channel_posterior(arm_key)
-   # self.alpha[arm_key], self.beta[arm_key] = _posterior_to_beta(bayesian_posterior)
-   
-   This provides Thompson Sampling with model-derived uncertainty, not just
-   observed variance.
-
-3. EXPERIMENT COMPLETION → PRIOR UPDATE TRIGGER:
-   When an experiment completes with is_significant=True, it should trigger
-   a closed-loop update in the Bayesian layer:
-   
-   # In IncrementalityResult or experiment completion handlers:
-   # def trigger_bayesian_update(self, bayesian_layer):
-   #     bayesian_layer.update_prior(
-   #         channel=self.arm_key,
-   #         evidence={'lift': self.lift_percent, 'ci': self.confidence_interval},
-   #         evidence_type='incrementality_experiment'
-   #     )
-   
-   This creates the closed feedback loop between experiments and the model.
-
-4. DASHBOARD UNCERTAINTY DISPLAY:
-   Bayesian credible intervals should surface alongside experiment CIs:
-   
-   # New function for dashboard integration:
-   # def get_combined_uncertainty(experiment_result, bayesian_posterior):
-   #     '''Return both experiment and model uncertainty for dashboard display'''
-   #     return {
-   #         'experiment_ci': experiment_result['confidence_interval'],
-   #         'model_ci': bayesian_posterior.hdi(0.95),
-   #         'combined_ci': _combine_intervals(experiment_ci, model_ci),
-   #         'uncertainty_source': ['experiment', 'bayesian_model']
-   #     }
-
-NO DEPENDENCIES TO ADD YET:
-Current implementation uses only standard library (math, random) and numpy.
-Future Bayesian layer would require NumPyro or TFP - do not add until ready.
+Bayesian integration is implemented via the Meridian pipeline. Incrementality results
+feed into Meridian priors (meridian_data.py), and Meridian posteriors flow back to
+bandit priors via meridian_bridge.py. See meridian_insights.py for combined
+model + experiment uncertainty display.
 """
 
 import math
@@ -224,14 +165,7 @@ def calculate_incrementality(
         - confidence_interval: 95% CI if sample sizes provided
         - is_significant: Whether lift is statistically significant
     
-    FUTURE BAYESIAN INTEGRATION:
-    When adding Bayesian layer, extend return dict to include:
-    # 'bayesian_prior_params': {
-    #     'mean': lift_percent / 100,  # Normalized for prior
-    #     'std': (ci_upper - ci_lower) / 3.92,  # CI to std conversion
-    #     'sample_size': treatment_users + control_users  # Evidence strength
-    # }
-    This enables experiment results to seed Bayesian regression priors.
+    Bayesian integration: experiment results seed Meridian priors via meridian_data.py.
     """
     # Handle edge cases
     if control_cvr == 0:
@@ -367,19 +301,7 @@ def calculate_incremental_roas(
     Returns:
         Dictionary with iROAS and supporting metrics
     
-    FUTURE BAYESIAN INTEGRATION:
-    iROAS is the key metric for calibrating Bayesian regression priors. When adding
-    Bayesian layer, this function should return additional fields:
-    # 'bayesian_channel_prior': {
-    #     'roas_mean': incremental_roas,
-    #     'roas_std': estimated_from_bootstrap_or_delta_method,
-    #     'prior_type': 'incrementality_iroas',
-    #     'use_as_prior_for': ['channel_coefficient', 'roas_multiplier']
-    # }
-    
-    The IncrementalityAwareBandit.incorporate_incrementality() method should pass
-    this to the Bayesian layer to update channel priors, creating the closed loop:
-    experiment_result['bayesian_channel_prior'] → bayesian_layer.update_prior()
+    Bayesian integration: iROAS calibrates Meridian channel priors; see meridian_bridge.py.
     """
     if treatment_spend == 0:
         return {

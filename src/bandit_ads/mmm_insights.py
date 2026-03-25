@@ -136,6 +136,7 @@ class MMMInsightsEngine:
             "channels": channels,
             "insights": insights,
             "days": days,
+            "model_source": "rule_based",
         }
 
     # -----------------------------------------------------------------------
@@ -161,8 +162,10 @@ class MMMInsightsEngine:
                     q = q.filter(Arm.campaign_id == campaign_id)
                 rows = []
                 for metric, arm in q.all():
+                    # Combine platform + channel to match display convention
+                    channel = f"{arm.platform} {arm.channel}" if arm.platform and arm.channel else (arm.channel or "Unknown")
                     rows.append({
-                        "channel": arm.name,
+                        "channel": channel,
                         "spend": float(metric.cost or 0),
                         "revenue": float(metric.revenue or 0),
                         "impressions": int(metric.impressions or 0),
@@ -450,4 +453,5 @@ class MMMInsightsEngine:
             "channels": channels,
             "insights": self._generate_insights(channels, total_spend),
             "days": 30,
+            "model_source": "rule_based",
         }

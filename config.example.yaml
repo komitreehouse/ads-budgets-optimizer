@@ -92,6 +92,18 @@ data_source:
   historical_data_path: null  # Path to historical CSV/JSON data
   update_frequency: 3600  # Seconds between data updates (real-time mode)
 
+# MMM engine configuration
+mmm:
+  engine: "rule_based"  # "rule_based" | "meridian"
+  meridian:
+    model_path: "data/meridian_model/"
+    training_schedule: "daily"  # "daily" | "weekly" | "manual"
+    min_training_weeks: 12  # Minimum weeks of data before training
+    mcmc_samples: 2000
+    mcmc_warmup: 1000
+    mcmc_chains: 4
+    convergence_threshold: 1.05  # Max R-hat for model acceptance
+
 # MMM factors (can be overridden per campaign)
 mmm_factors:
   seasonality:

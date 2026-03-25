@@ -66,6 +66,7 @@ def render():
         total_spend = cross.get("total_spend", 0)
         total_revenue = cross.get("total_revenue", 0)
         blended_roas = cross.get("blended_roas", 0)
+        model_source = cross.get("model_source", "rule_based")
 
         saturation = data_service.get_mmm_saturation_curves(days=days)
         recs = data_service.get_mmm_budget_recommendations(
@@ -75,6 +76,22 @@ def render():
     except Exception as e:
         render_error_message(e, "loading MMM insights")
         return
+
+    # Model status indicator
+    if model_source == "meridian":
+        st.markdown(
+            '<div style="display:inline-block; padding:4px 12px; background:#ECFDF5; '
+            'border:1px solid #6EE7B7; border-radius:16px; font-size:0.75rem; '
+            'color:#065F46; font-weight:600;">Meridian (Bayesian)</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div style="display:inline-block; padding:4px 12px; background:#FEF3C7; '
+            'border:1px solid #FCD34D; border-radius:16px; font-size:0.75rem; '
+            'color:#92400E; font-weight:600;">Rule-Based Model</div>',
+            unsafe_allow_html=True,
+        )
 
     # -----------------------------------------------------------------------
     # Section 1 — Portfolio KPIs
@@ -186,14 +203,27 @@ def render():
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # Channel table
-        table_df = df[["channel", "spend", "revenue", "roas", "saturation_score",
-                        "efficiency_score", "marginal_roas", "recommendation"]].copy()
-        table_df.columns = ["Channel", "Spend ($)", "Revenue ($)", "ROAS",
-                             "Saturation", "Efficiency", "Marginal ROAS", "Recommendation"]
+        # Channel table — include credible intervals if available (Meridian)
+        has_ci = "roas_lower" in df.columns and "roas_upper" in df.columns
+        base_cols = ["channel", "spend", "revenue", "roas"]
+        if has_ci:
+            base_cols += ["roas_lower", "roas_upper"]
+        base_cols += ["saturation_score", "efficiency_score", "marginal_roas", "recommendation"]
+        table_df = df[[c for c in base_cols if c in df.columns]].copy()
+
+        rename = {
+            "channel": "Channel", "spend": "Spend ($)", "revenue": "Revenue ($)",
+            "roas": "ROAS", "roas_lower": "ROAS (2.5%)", "roas_upper": "ROAS (97.5%)",
+            "saturation_score": "Saturation", "efficiency_score": "Efficiency",
+            "marginal_roas": "Marginal ROAS", "recommendation": "Recommendation",
+        }
+        table_df = table_df.rename(columns={k: v for k, v in rename.items() if k in table_df.columns})
         table_df["Spend ($)"] = table_df["Spend ($)"].apply(lambda x: f"${x:,.0f}")
         table_df["Revenue ($)"] = table_df["Revenue ($)"].apply(lambda x: f"${x:,.0f}")
         table_df["ROAS"] = table_df["ROAS"].apply(lambda x: f"{x:.2f}x")
+        if "ROAS (2.5%)" in table_df.columns:
+            table_df["ROAS (2.5%)"] = table_df["ROAS (2.5%)"].apply(lambda x: f"{x:.2f}x")
+            table_df["ROAS (97.5%)"] = table_df["ROAS (97.5%)"].apply(lambda x: f"{x:.2f}x")
         table_df["Saturation"] = table_df["Saturation"].apply(lambda x: f"{x:.0%}")
         table_df["Efficiency"] = table_df["Efficiency"].apply(lambda x: f"{x:.2f}x")
         table_df["Marginal ROAS"] = table_df["Marginal ROAS"].apply(lambda x: f"{x:.2f}x")
@@ -219,6 +249,22 @@ def render():
             current_spend = data.get("current_spend", 0)
             current_roas = data.get("current_roas", 0)
             optimal_spend = data.get("optimal_spend", 0)
+
+            # Credible interval band (Meridian only)
+            roas_lower = data.get("roas_lower")
+            roas_upper = data.get("roas_upper")
+            if roas_lower and roas_upper and len(roas_lower) == len(spend_pts):
+                fig2.add_trace(go.Scatter(
+                    x=spend_pts + spend_pts[::-1],
+                    y=roas_upper + roas_lower[::-1],
+                    fill="toself",
+                    fillcolor=color.replace(")", ", 0.1)").replace("rgb", "rgba")
+                    if color.startswith("rgb") else f"rgba(100,100,100,0.1)",
+                    line=dict(width=0),
+                    showlegend=False,
+                    name=f"{ch} (95% CI)",
+                    hoverinfo="skip",
+                ))
 
             fig2.add_trace(go.Scatter(
                 x=spend_pts, y=roas_pts,
