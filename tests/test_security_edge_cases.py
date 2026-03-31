@@ -9,6 +9,7 @@ fallback behavior, orchestrator logic, and data integrity edge cases.
 import json
 import hmac
 import hashlib
+import math
 import io
 import asyncio
 from unittest.mock import patch, MagicMock, AsyncMock
@@ -32,21 +33,19 @@ client = TestClient(app)
 # ---------------------------------------------------------------------------
 
 class TestCORSPolicy:
-    """Verify CORS configuration risks."""
+    """Verify CORS configuration is restrictive."""
 
     def test_wildcard_origin_with_credentials(self):
-        """CORS allows_origins=['*'] + allow_credentials=True is a mis-config.
-        Browsers reject Access-Control-Allow-Origin: * when credentials are
-        sent, but the intent signals dev-mode defaults left in production."""
+        """Disallowed origins should not be reflected by CORS."""
         resp = client.options(
             "/api/health",
             headers={"Origin": "https://evil.example.com", "Access-Control-Request-Method": "GET"},
         )
         allow_origin = resp.headers.get("access-control-allow-origin", "")
-        assert allow_origin in ("*", "https://evil.example.com"), \
-            "Expected wildcard or reflected origin from permissive CORS"
+        assert allow_origin == "", "Disallowed origin should not receive CORS allow header"
 
     def test_cors_allows_arbitrary_methods(self):
+        """Disallowed origins should not receive access-control allow-origin."""
         resp = client.options(
             "/api/health",
             headers={
@@ -54,36 +53,32 @@ class TestCORSPolicy:
                 "Access-Control-Request-Method": "DELETE",
             },
         )
-        allow_methods = resp.headers.get("access-control-allow-methods", "")
-        assert "DELETE" in allow_methods or "*" in allow_methods
+        allow_origin = resp.headers.get("access-control-allow-origin", "")
+        assert allow_origin == "", "Disallowed origin should not be explicitly allowed"
 
 
 class TestGlobalErrorHandler:
-    """Verify 500 responses do not leak internal details."""
+    """Verify 500/503 responses are sanitized."""
 
-    def test_500_leaks_detail_to_client(self):
-        """Dashboard route raises HTTPException(detail=str(e)) which leaks
-        internal exception text to clients."""
+    def test_500_sanitizes_detail_for_client(self):
+        """HTTP 500 should not expose internal exception details to clients."""
         with patch("src.bandit_ads.api.routes.dashboard.get_db_manager") as mock_db:
             mock_db.side_effect = RuntimeError("secret_db_password_here")
             resp = client.get("/api/dashboard/summary")
         assert resp.status_code == 500
         body = resp.json()
-        # FastAPI wraps HTTPException detail into {"detail": ...}
-        assert "detail" in body
-        # Documents the leak — exception text appears in HTTP response
-        assert "secret_db_password_here" in body["detail"]
+        assert body.get("error") == "Internal server error"
+        assert "secret_db_password_here" not in json.dumps(body)
 
-    def test_health_503_leaks_exception(self):
-        """Health endpoint 503 currently returns str(e) via inline import."""
+    def test_health_503_sanitizes_exception(self):
+        """Health endpoint 503 should not leak internal hostnames/details."""
         with patch("src.bandit_ads.database.get_db_manager") as mock_db:
             mock_db.side_effect = Exception("connection refused to db.prod.internal:5432")
             resp = client.get("/api/health")
         assert resp.status_code == 503
         body = resp.json()
-        assert "error" in body
-        # Documents the leak — internal hostname appears in HTTP response
-        assert "db.prod.internal" in body["error"]
+        assert body.get("error") == "Service temporarily unavailable"
+        assert "db.prod.internal" not in json.dumps(body)
 
 
 # ---------------------------------------------------------------------------
@@ -118,9 +113,9 @@ class TestUnauthenticatedAccess:
 # ---------------------------------------------------------------------------
 
 class TestAskEndpointErrorSanitization:
-    """The /api/ask route returns str(e) in error responses."""
+    """The /api/ask route should sanitize internal exception details."""
 
-    def test_ask_error_leaks_exception_text(self):
+    def test_ask_error_does_not_leak_exception_text(self):
         """OrchestratorAgent is imported inside the route handler, so we
         must patch at the module level where it's resolved."""
         with patch("src.bandit_ads.orchestrator.OrchestratorAgent") as MockOrch:
@@ -132,8 +127,8 @@ class TestAskEndpointErrorSanitization:
         assert resp.status_code == 200  # returns 200 with error in body
         body = resp.json()
         assert body.get("error") is not None
-        # Documents that exception text with secrets appears in response
-        assert "sk-secret-leaked" in body["error"]
+        assert body["error"] == "Internal server error"
+        assert "sk-secret-leaked" not in json.dumps(body)
 
     def test_ask_empty_query(self):
         """Empty query string should still return a valid response shape."""
@@ -244,11 +239,11 @@ class TestUploadEndpoint:
 class TestWebhookSignatureVerification:
     """Test webhook handler signature logic in isolation."""
 
-    def test_verify_signature_no_secret_returns_true(self):
-        """Fail-open: missing secret skips verification."""
+    def test_verify_signature_no_secret_returns_false(self):
+        """Fail-closed: missing secret rejects verification."""
         from src.bandit_ads.webhooks import WebhookHandler
         handler = WebhookHandler(secret_keys={})
-        assert handler.verify_signature("google", b"payload", "any_sig") is True
+        assert handler.verify_signature("google", b"payload", "any_sig") is False
 
     def test_verify_signature_wrong_hmac_returns_false(self):
         from src.bandit_ads.webhooks import WebhookHandler
@@ -271,20 +266,12 @@ class TestWebhookSignatureVerification:
         handler = WebhookHandler(secret_keys={"meta": secret})
         assert handler.verify_signature("meta", payload, f"sha256={raw_sig}") is True
 
-    def test_webhook_route_no_signature_header_bypasses_check(self):
-        """Google/TTD routes only verify IF signature header is present.
-        Missing header → no verification at all."""
+    def test_webhook_route_no_signature_header_rejected(self):
+        """Missing signature should fail verification in fail-closed mode."""
         from src.bandit_ads.webhooks import WebhookHandler
         handler = WebhookHandler(secret_keys={"google": "secret"})
-        # The Flask route checks `if signature and not handler.verify_signature(...)`.
-        # With no signature header, verification is skipped entirely.
-        # This test documents the bypass.
-        signature = None
-        if signature and not handler.verify_signature("google", b"data", signature):
-            bypassed = False
-        else:
-            bypassed = True
-        assert bypassed is True
+        signature = ""
+        assert handler.verify_signature("google", b"data", signature) is False
 
 
 # ---------------------------------------------------------------------------
@@ -292,25 +279,29 @@ class TestWebhookSignatureVerification:
 # ---------------------------------------------------------------------------
 
 class TestAuthModule:
-    """Test auth.py password hashing and access control."""
+    """Test auth.py password hashing and default access control."""
 
-    def test_password_hash_is_unsalted_sha256(self):
+    def test_password_hash_uses_bcrypt(self):
         from src.bandit_ads.auth import AuthManager
         with patch("src.bandit_ads.auth.get_db_manager"):
             mgr = AuthManager()
         h = mgr.hash_password("password123")
-        expected = hashlib.sha256(b"password123").hexdigest()
-        assert h == expected, "Password hashing uses single-round unsalted SHA-256"
+        assert h.startswith("$2"), "Password hashing should use bcrypt format"
+        assert mgr.verify_password("password123", h) is True
 
-    def test_same_password_same_hash(self):
-        """Without salt, identical passwords produce identical hashes."""
+    def test_same_password_produces_different_hashes(self):
+        """With per-password salt, identical passwords should hash differently."""
         from src.bandit_ads.auth import AuthManager
         with patch("src.bandit_ads.auth.get_db_manager"):
             mgr = AuthManager()
-        assert mgr.hash_password("abc") == mgr.hash_password("abc")
+        h1 = mgr.hash_password("abc")
+        h2 = mgr.hash_password("abc")
+        assert h1 != h2
+        assert mgr.verify_password("abc", h1) is True
+        assert mgr.verify_password("abc", h2) is True
 
-    def test_default_access_viewer_can_read_any_campaign(self):
-        """When no CampaignAccess row exists, viewers get read on ALL campaigns."""
+    def test_default_access_viewer_cannot_read_any_campaign(self):
+        """When no CampaignAccess row exists, deny access by default."""
         from src.bandit_ads.auth import AuthManager
         with patch("src.bandit_ads.auth.get_db_manager") as mock_db:
             mock_session = MagicMock()
@@ -321,7 +312,7 @@ class TestAuthModule:
 
         user = MagicMock()
         user.role = "viewer"
-        assert mgr.check_access(user, campaign_id=9999, operation="read") is True
+        assert mgr.check_access(user, campaign_id=9999, operation="read") is False
 
     def test_default_access_viewer_cannot_write(self):
         from src.bandit_ads.auth import AuthManager
@@ -473,7 +464,8 @@ class TestIncrementalityEdgeCases:
             control_conversions=0,
         )
         assert result is not None
-        assert result["lift_percent"] == float("inf")
+        assert math.isfinite(result["lift_percent"])
+        assert result["lift_percent"] == 999999.99
 
     def test_calculate_incrementality_both_zero(self):
         from src.bandit_ads.incrementality import calculate_incrementality
@@ -491,8 +483,8 @@ class TestIncrementalityEdgeCases:
             control_users=100,
         )
         assert result is not None
-        iroas = result.get("incremental_roas", result.get("iroas", 0))
-        assert iroas == 0 or iroas == float("inf") or iroas is not None
+        iroas = result.get("incremental_roas")
+        assert iroas == 0.0, f"Expected iROAS of 0.0 for zero spend, got {iroas}"
 
 
 # ---------------------------------------------------------------------------
@@ -500,7 +492,7 @@ class TestIncrementalityEdgeCases:
 # ---------------------------------------------------------------------------
 
 class TestDataServiceContracts:
-    """Test mock/live response shape mismatches."""
+    """Test hardened mock/live response contracts."""
 
     def test_query_orchestrator_mock_uses_answer_key(self):
         """Mock response uses 'answer', live wraps in 'response'."""
@@ -512,8 +504,8 @@ class TestDataServiceContracts:
         result = ds.query_orchestrator("Why did ROAS increase?")
         assert "answer" in result, "Mock response should have 'answer' key"
 
-    def test_query_orchestrator_live_wraps_in_response(self):
-        """Live path wraps API 'answer' into 'response' key — mismatch."""
+    def test_query_orchestrator_live_returns_answer_consistently(self):
+        """Live path should expose answer consistently (with response alias)."""
         from frontend.services.data_service import DataService
         with patch("frontend.services.data_service.requests.get") as mock_get:
             mock_resp = MagicMock()
@@ -529,11 +521,11 @@ class TestDataServiceContracts:
             }
             result = ds.query_orchestrator("Why did budget increase?")
 
-        assert "response" in result, "Live path should wrap answer into 'response' key"
-        assert "answer" not in result, "Live path should NOT have 'answer' at top level"
+        assert result.get("answer") == "Budget increased due to ROAS improvement"
+        assert result.get("response") == result.get("answer")
 
-    def test_pause_campaign_live_mode_uses_undefined_attribute(self):
-        """pause_campaign references self.optimization_service which is never set."""
+    def test_pause_campaign_live_mode_uses_api_post(self):
+        """pause_campaign should call API endpoint instead of undefined attribute."""
         from frontend.services.data_service import DataService
         with patch("frontend.services.data_service.requests.get") as mock_get:
             mock_resp = MagicMock()
@@ -543,11 +535,13 @@ class TestDataServiceContracts:
             ds = DataService()
 
         assert ds.use_mock is False
-        assert not hasattr(ds, "optimization_service"), \
-            "optimization_service attribute is never initialized"
+        with patch.object(ds, "_api_post") as mock_post:
+            mock_post.return_value = {"success": True}
+            ds.pause_campaign(123)
+            mock_post.assert_called_once_with("/api/campaigns/123/pause")
 
-    def test_api_get_non_json_response_raises(self):
-        """_api_get only catches RequestException, not JSONDecodeError."""
+    def test_api_get_non_json_response_returns_none(self):
+        """_api_get should safely return None on invalid JSON payloads."""
         from frontend.services.data_service import DataService
         with patch("frontend.services.data_service.requests.get") as mock_get:
             mock_resp = MagicMock()
@@ -562,9 +556,7 @@ class TestDataServiceContracts:
             mock_resp2.raise_for_status.return_value = None
             mock_resp2.json.side_effect = ValueError("No JSON")
             mock_get2.return_value = mock_resp2
-            # This will raise because ValueError is not caught
-            with pytest.raises(ValueError):
-                ds._api_get("/api/dashboard/summary")
+            assert ds._api_get("/api/dashboard/summary") is None
 
 
 # ---------------------------------------------------------------------------

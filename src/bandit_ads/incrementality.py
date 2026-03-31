@@ -179,10 +179,12 @@ def calculate_incrementality(
                 'p_value': 1.0
             }
         else:
+            # Use a JSON-safe cap instead of Infinity to avoid invalid payloads.
+            capped_lift = 999999.99
             return {
-                'lift_percent': float('inf'),
+                'lift_percent': capped_lift,
                 'incremental_cvr': treatment_cvr,
-                'relative_lift': float('inf'),
+                'relative_lift': capped_lift,
                 'confidence_interval': None,
                 'is_significant': True,
                 'p_value': 0.0

@@ -1,4 +1,6 @@
-# IPSA Security & Edge-Case Audit Report
+Verify each finding against the current code and only fix it if needed.
+
+In @SECURITY_AUDIT_REPORT.md at line 51, The report lists F18 in the Medium-priority table but the adversarial review text later states "F8/F18 upgraded to HIGH"; update the markdown so F18 appears in the HIGH-priority table and is removed from the Medium table, ensuring the F18 row (referencing `/api/ask` and `src/bandit_ads/api/main.py`) is added to the HIGH section and deleted from the Medium section, and adjust any adjacent numbering or table formatting so the tables render correctly.# IPSA Security & Edge-Case Audit Report
 
 **Date:** 2026-03-31
 **Scope:** Mock-data-first security and production edge-case QA pass
@@ -33,6 +35,7 @@ The application has strong algorithmic foundations (bandit optimization, MMM mod
 | F7 | **Default-open access control.** When no `CampaignAccess` row exists, viewers get read access to ALL campaigns, analysts get write access to ALL campaigns. Inverts least-privilege. | `src/bandit_ads/auth.py:214-217` | `TestAuthModule::test_default_access_viewer_can_read_any_campaign` |
 | F8 | **Dynamic method dispatch from LLM output.** `_execute_tool_calls` uses `__getattribute__(f"_{tool_name}")` where `tool_name` comes from LLM-generated tool calls. Prompt injection via the `/api/ask` endpoint could invoke arbitrary methods on the operations object. | `src/bandit_ads/orchestrator.py:351` | — |
 | F9 | **XSS via `unsafe_allow_html=True`.** 60+ instances in frontend render API-controlled data (campaign names, experiment names, recommendation titles) directly into raw HTML without sanitization. | Frontend pages: `incrementality.py`, `campaign_detail.py`, `recommendations.py`, `home.py` | — |
+| F18 | **No rate limiting on any endpoint.** The `/api/ask` endpoint makes LLM API calls — unauthenticated abuse can run up Claude/OpenAI bills. Upload endpoint compounds this (memory exhaustion). *(Upgraded from Medium by adversarial review.)* | `src/bandit_ads/api/main.py` | — |
 
 ---
 
@@ -45,10 +48,9 @@ The application has strong algorithmic foundations (bandit optimization, MMM mod
 | F12 | **`pause_campaign`/`resume_campaign` reference undefined attribute.** `self.optimization_service` is never initialized in `DataService.__init__`. These methods (plus 3 others) silently swallow `AttributeError`, show success toast to user while doing nothing. | `frontend/services/data_service.py:1003-1017, 1224-1240` | `TestDataServiceContracts` |
 | F13 | **Silent mock fallback masks API outages.** When `use_mock=False` but individual endpoints fail, methods silently return hardcoded mock data. No `"data is synthetic"` indicator in UI. Users could make real budget decisions based on fictional numbers. | `frontend/services/data_service.py` (15+ methods) | `TestDataServiceResponseContracts::test_silent_fallback_when_endpoint_fails` |
 | F14 | **`_api_get` doesn't catch `JSONDecodeError`.** A 200 response with non-JSON body crashes with uncaught `ValueError`. | `frontend/services/data_service.py:53-62` | `TestDataServiceContracts::test_api_get_non_json_response_raises` |
-| F15 | **`float('inf')` in incrementality results breaks JSON.** `calculate_incrementality` returns `inf` for lift when control CVR is zero. Python's `json.dumps` serializes this as `Infinity` which is invalid JSON per RFC 7159 — JavaScript clients will crash. | `src/bandit_ads/incrementality.py:182` | `TestIncrementalityEdgeCases`, `TestJSONSerializationEdgeCases` |
+| F24 | ~~**`float('inf')` in incrementality results breaks JSON.**~~ **FIXED.** `calculate_incrementality` now returns `999999.99` (JSON-safe cap) instead of `float('inf')` when control CVR is zero. | `src/bandit_ads/incrementality.py:182` | `TestIncrementalityEdgeCases`, `TestJSONSerializationEdgeCases` |
 | F16 | **`np.load(allow_pickle=True)`.** Used in Meridian insights to load model files. If model path is influenced by untrusted input, enables arbitrary code execution via pickle gadgets. | `src/bandit_ads/meridian_insights.py` | — |
 | F17 | **Forecast/scenario methods ignore `use_mock` flag.** `get_forecast` and `simulate_scenario` always try HTTP first regardless of `use_mock` state, causing spurious network calls in demo mode. | `frontend/services/data_service.py:1872-1878` | `TestForecastScenarioMockInconsistency` |
-| F18 | **No rate limiting on any endpoint.** The `/api/ask` endpoint makes LLM API calls — unauthenticated abuse can run up Claude/OpenAI bills. Upload endpoint compounds this (memory exhaustion). | `src/bandit_ads/api/main.py` | — |
 
 ---
 
@@ -67,7 +69,7 @@ The application has strong algorithmic foundations (bandit optimization, MMM mod
 ## Adversarial Review Reconciliation
 
 The independent review **confirmed** 17 of 20 original findings and **disputed** 2:
-- **F15 (incrementality ZeroDivisionError):** DISPUTED — the page has an early `return` guard before the division. The empty-list case is handled. Removed from Critical/Medium.
+- **F15 (incrementality ZeroDivisionError):** DISPUTED — the function has an early `return` guard before the division. The empty-list case is handled. Removed from Critical/Medium. *(The related `float('inf')` JSON serialization concern was tracked separately as F24 and has since been fixed.)*
 - **F20 (SQLAlchemy mapper conflict):** DISPUTED — models co-import correctly; issue may have been a runtime ordering artifact. Downgraded to informational.
 
 The independent review **upgraded** 3 findings:

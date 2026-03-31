@@ -56,8 +56,8 @@ class WebhookHandler:
             signature: Signature from request headers (may include prefix like 'sha256=')
         """
         if platform not in self.secret_keys:
-            logger.warning(f"No secret key configured for {platform}, skipping verification")
-            return True  # Allow if no secret configured
+            logger.error(f"No secret key configured for {platform}, rejecting webhook")
+            return False
         
         secret = self.secret_keys[platform].encode('utf-8')
         
@@ -402,10 +402,10 @@ def google_webhook():
     """Handle Google Ads webhook."""
     handler = get_webhook_handler()
     
-    # Verify signature if configured
-    signature = request.headers.get('X-Google-Signature')
-    if signature and not handler.verify_signature('google', request.data, signature):
-        abort(401, 'Invalid signature')
+    # Always verify signature (fail closed on missing/invalid values)
+    signature = request.headers.get('X-Google-Signature', '')
+    if not handler.verify_signature('google', request.data, signature):
+        abort(401, 'Missing or invalid signature')
     
     data = request.get_json()
     result = handler.handle_google_ads_webhook(data)
@@ -421,15 +421,10 @@ def meta_webhook():
     """Handle Meta Ads webhook."""
     handler = get_webhook_handler()
     
-    # Verify signature if configured
-    # Meta sends signature in X-Hub-Signature-256 header with 'sha256=' prefix
-    signature = request.headers.get('X-Hub-Signature-256') or request.headers.get('X-Hub-Signature')
-    if signature:
-        # Remove 'sha256=' prefix if present
-        if signature.startswith('sha256='):
-            signature = signature[7:]
-        if not handler.verify_signature('meta', request.data, signature):
-            abort(401, 'Invalid signature')
+    # Always verify signature (Meta may send with sha256= prefix)
+    signature = request.headers.get('X-Hub-Signature-256') or request.headers.get('X-Hub-Signature') or ''
+    if not handler.verify_signature('meta', request.data, signature):
+        abort(401, 'Missing or invalid signature')
     
     data = request.get_json()
     result = handler.handle_meta_ads_webhook(data)
@@ -445,10 +440,10 @@ def trade_desk_webhook():
     """Handle The Trade Desk webhook."""
     handler = get_webhook_handler()
     
-    # Verify signature if configured
-    signature = request.headers.get('X-Trade-Desk-Signature')
-    if signature and not handler.verify_signature('trade_desk', request.data, signature):
-        abort(401, 'Invalid signature')
+    # Always verify signature (fail closed on missing/invalid values)
+    signature = request.headers.get('X-Trade-Desk-Signature', '')
+    if not handler.verify_signature('trade_desk', request.data, signature):
+        abort(401, 'Missing or invalid signature')
     
     data = request.get_json()
     result = handler.handle_trade_desk_webhook(data)

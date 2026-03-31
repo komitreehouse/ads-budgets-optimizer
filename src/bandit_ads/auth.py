@@ -7,6 +7,7 @@ Multi-user support with role-based access control.
 from typing import Optional, Dict, List
 from enum import Enum
 from datetime import datetime, timedelta
+import bcrypt
 import hashlib
 import secrets
 
@@ -85,7 +86,16 @@ class AuthManager:
     
     def hash_password(self, password: str) -> str:
         """Hash a password."""
-        return hashlib.sha256(password.encode()).hexdigest()
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+    def verify_password(self, password: str, password_hash: str) -> bool:
+        """Verify password against current bcrypt or legacy SHA-256 hashes."""
+        try:
+            return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+        except ValueError:
+            # Backward compatibility for historical SHA-256 records.
+            return hashlib.sha256(password.encode("utf-8")).hexdigest() == password_hash
     
     def create_user(
         self,
@@ -138,8 +148,7 @@ class AuthManager:
                     return None
                 
                 # Check password
-                password_hash = self.hash_password(password)
-                if user.password_hash != password_hash:
+                if not self.verify_password(password, user.password_hash):
                     logger.warning(f"Authentication failed: invalid password for {email}")
                     return None
                 
@@ -212,11 +221,8 @@ class AuthManager:
             ).first()
             
             if not access:
-                # Default: viewer can read, analyst can read+write
-                if operation == "read":
-                    return user.role in ["viewer", "analyst"]
-                else:
-                    return user.role == "analyst"
+                # Deny by default unless access is explicitly granted.
+                return False
             
             if operation == "read":
                 return access.can_read

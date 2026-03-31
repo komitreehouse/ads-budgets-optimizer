@@ -20,6 +20,20 @@ from src.bandit_ads.utils import get_logger, ConfigManager
 
 logger = get_logger('orchestrator')
 
+ALLOWED_TOOL_CALLS = {
+    "get_campaign_status",
+    "get_allocation_history",
+    "get_arm_performance",
+    "query_metrics",
+    "explain_allocation_change",
+    "explain_performance",
+    "suggest_allocation_override",
+    "pause_campaign",
+    "resume_campaign",
+    "web_search",
+    "analyze_trend",
+}
+
 
 class OrchestratorAgent:
     """
@@ -134,6 +148,7 @@ class OrchestratorAgent:
             
             # 5. Retrieve relevant context from RAG
             rag_context = None
+            rag_results = None
             if query_type in [QueryType.EXPLANATION, QueryType.ANALYSIS] and self.vector_store:
                 try:
                     rag_results = self.vector_store.search_similar_decisions(
@@ -142,10 +157,8 @@ class OrchestratorAgent:
                 except Exception as e:
                     logger.debug(f"Could not retrieve RAG context: {e}")
                     rag_results = None
-            else:
-                rag_results = None
-                if rag_results:
-                    rag_context = self._format_rag_context(rag_results)
+            if rag_results:
+                rag_context = self._format_rag_context(rag_results)
             
             # 6. Build tool context (available MCP tools)
             tool_context = self._build_tool_context()
@@ -341,6 +354,13 @@ Available Tools (via MCP):
         for tool_call in tool_calls:
             try:
                 tool_name = tool_call.get("name")
+                if tool_name not in ALLOWED_TOOL_CALLS:
+                    results.append({
+                        "tool": tool_name,
+                        "error": "Tool not permitted"
+                    })
+                    continue
+
                 arguments = tool_call.get("arguments", {})
                 
                 # Add user_id to arguments if available
@@ -348,7 +368,10 @@ Available Tools (via MCP):
                     arguments["user_id"] = user_id
                 
                 # Call MCP tool
-                result = await self.mcp_server.operations.__getattribute__(f"_{tool_name}")(**arguments)
+                tool_func = getattr(self.mcp_server.operations, f"_{tool_name}", None)
+                if tool_func is None:
+                    raise AttributeError(f"Tool method not found: {tool_name}")
+                result = await tool_func(**arguments)
                 results.append({
                     "tool": tool_name,
                     "result": result

@@ -5,10 +5,11 @@ Routes user questions to the OrchestratorAgent for real-time,
 explainable answers about campaigns, performance, and optimizer decisions.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional
 
+from src.bandit_ads.api.rate_limit import limiter
 from src.bandit_ads.utils import get_logger
 
 logger = get_logger('api.ask')
@@ -29,7 +30,8 @@ class AskResponse(BaseModel):
 
 
 @router.post("", response_model=AskResponse)
-async def ask_question(request: AskRequest):
+@limiter.limit("30/minute")
+async def ask_question(request: Request, payload: AskRequest):
     """
     Ask a natural language question about campaigns and optimization.
 
@@ -42,8 +44,8 @@ async def ask_question(request: AskRequest):
         orchestrator = OrchestratorAgent()
 
         result = await orchestrator.process_query(
-            query=request.query,
-            campaign_id=request.campaign_id
+            query=payload.query,
+            campaign_id=payload.campaign_id
         )
 
         return AskResponse(
@@ -56,6 +58,6 @@ async def ask_question(request: AskRequest):
     except Exception as e:
         logger.error(f"Error processing ask query: {e}")
         return AskResponse(
-            answer=f"I'm sorry, I couldn't process your question right now. Error: {str(e)}",
-            error=str(e),
+            answer="I'm sorry, I couldn't process your question right now.",
+            error="Internal server error",
         )

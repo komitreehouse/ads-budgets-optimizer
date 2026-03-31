@@ -4,19 +4,24 @@ FastAPI application for Ads Budget Optimizer API.
 Provides REST endpoints for the frontend dashboard.
 """
 
-from fastapi import FastAPI, HTTPException, Query
+import os
+from datetime import datetime
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import sys
 from pathlib import Path
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.bandit_ads.api.routes import campaigns, dashboard, recommendations, optimizer, incrementality, ask, data, forecasting, scenarios, export, attribution, mmm
+from src.bandit_ads.api.rate_limit import limiter
 from src.bandit_ads.utils import get_logger
 
 logger = get_logger('api')
@@ -28,14 +33,23 @@ app = FastAPI(
     version="1.0.0"
 )
 
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGIN", "http://localhost:8501").split(",")
+    if origin.strip()
+]
+
 # CORS middleware - allow frontend to access API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual frontend URL
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Include routers
 app.include_router(campaigns.router, prefix="/api/campaigns", tags=["campaigns"])
@@ -81,21 +95,41 @@ async def health_check():
             status_code=503,
             content={
                 "status": "unhealthy",
-                "error": str(e),
+                "error": "Service temporarily unavailable",
                 "timestamp": datetime.utcnow().isoformat()
             }
         )
 
 
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Sanitize server-side HTTP errors while preserving 4xx details."""
+    if exc.status_code >= 500:
+        logger.error(f"HTTP {exc.status_code}: {exc.detail}", exc_info=True)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": "Internal server error",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail
+        }
+    )
+
+
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
+async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler."""
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={
             "error": "Internal server error",
-            "message": str(exc),
             "timestamp": datetime.utcnow().isoformat()
         }
     )
