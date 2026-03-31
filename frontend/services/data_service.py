@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
+import json as jsonlib
 import random
 import requests
 import os
@@ -57,7 +58,7 @@ class DataService:
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, jsonlib.JSONDecodeError, ValueError) as e:
             print(f"API request failed: {e}")
             return None
     
@@ -68,7 +69,7 @@ class DataService:
             response = requests.post(url, json=json, data=data, timeout=10)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, jsonlib.JSONDecodeError, ValueError) as e:
             print(f"API POST request failed: {e}")
             return None
     
@@ -1004,7 +1005,9 @@ class DataService:
         """Pause a campaign."""
         if not self.use_mock:
             try:
-                self.optimization_service.pause_campaign(campaign_id)
+                result = self._api_post(f"/api/campaigns/{campaign_id}/pause")
+                if not result:
+                    print(f"Error pausing campaign {campaign_id}: API request failed")
             except Exception as e:
                 print(f"Error pausing campaign: {e}")
     
@@ -1012,7 +1015,9 @@ class DataService:
         """Resume a campaign."""
         if not self.use_mock:
             try:
-                self.optimization_service.resume_campaign(campaign_id)
+                result = self._api_post(f"/api/campaigns/{campaign_id}/resume")
+                if not result:
+                    print(f"Error resuming campaign {campaign_id}: API request failed")
             except Exception as e:
                 print(f"Error resuming campaign: {e}")
     
@@ -1192,21 +1197,6 @@ class DataService:
     
     def _mock_optimizer_status(self) -> Dict[str, Any]:
         """Get optimizer service status."""
-        if not self.use_mock:
-            try:
-                status = self.optimization_service.get_status()
-                return {
-                    'status': 'running' if status.get('running') else 'paused',
-                    'last_run': status.get('last_cycle_time', 'Never'),
-                    'next_run': 'In 15 minutes',
-                    'active_campaigns': status.get('campaigns_optimized', 0),
-                    'optimizations_today': status.get('total_cycles', 0),
-                    'avg_time_ms': 150,
-                    'error_rate': status.get('failed_cycles', 0) / max(status.get('total_cycles', 1), 1)
-                }
-            except Exception as e:
-                print(f"Error getting optimizer status: {e}")
-        
         return {
             'status': 'running',
             'last_run': '5 minutes ago',
@@ -1221,7 +1211,9 @@ class DataService:
         """Pause the optimizer."""
         if not self.use_mock:
             try:
-                self.optimization_service.stop()
+                result = self._api_post("/api/optimizer/pause")
+                if not result:
+                    print("Error pausing optimizer: API request failed")
             except Exception as e:
                 print(f"Error pausing optimizer: {e}")
     
@@ -1229,7 +1221,9 @@ class DataService:
         """Resume the optimizer."""
         if not self.use_mock:
             try:
-                self.optimization_service.start()
+                result = self._api_post("/api/optimizer/resume")
+                if not result:
+                    print("Error resuming optimizer: API request failed")
             except Exception as e:
                 print(f"Error resuming optimizer: {e}")
     
@@ -1237,7 +1231,9 @@ class DataService:
         """Force an immediate optimization run."""
         if not self.use_mock:
             try:
-                self.optimization_service._run_optimization_cycle()
+                result = self._api_post("/api/optimizer/run")
+                if not result:
+                    print("Error forcing optimization: API request failed")
             except Exception as e:
                 print(f"Error forcing optimization: {e}")
     
@@ -1336,8 +1332,10 @@ class DataService:
                     "campaign_id": campaign_id
                 })
                 if result and not result.get('error'):
+                    answer = result.get('answer', '')
                     return {
-                        'response': result.get('answer', ''),
+                        'answer': answer,
+                        'response': answer,
                         'query_type': result.get('query_type', 'general'),
                         'model': result.get('model_used', 'Claude'),
                         'tools_used': result.get('tools_used', [])
@@ -1346,7 +1344,10 @@ class DataService:
                 print(f"Error querying orchestrator: {e}")
 
         # Mock response fallback
-        return self._mock_query_response(query)
+        mock_result = self._mock_query_response(query)
+        if 'answer' in mock_result and 'response' not in mock_result:
+            mock_result['response'] = mock_result['answer']
+        return mock_result
     
     def _mock_query_response(self, query: str) -> Dict[str, Any]:
         """Generate a mock query response."""
@@ -1871,9 +1872,10 @@ Would you like me to provide more specific details? Try asking:
 
     def get_forecast(self, campaign_id: int, horizon_days: int = 30) -> Dict[str, Any]:
         """Return ROAS forecast for a campaign over the given horizon."""
-        result = self._api_get(f"/api/forecasting/{campaign_id}", params={"horizon": horizon_days})
-        if result:
-            return result
+        if not self.use_mock:
+            result = self._api_get(f"/api/forecasting/{campaign_id}", params={"horizon": horizon_days})
+            if result:
+                return result
         # Fallback: generate stub forecast inline
         return self._mock_forecast(campaign_id, horizon_days)
 
@@ -1923,13 +1925,14 @@ Would you like me to provide more specific details? Try asking:
         self, campaign_id: int, budget_changes: Dict[str, float], horizon_days: int = 30
     ) -> Dict[str, Any]:
         """Simulate what-if budget reallocation."""
-        result = self._api_post("/api/scenarios/simulate", json={
-            "campaign_id": campaign_id,
-            "budget_changes": budget_changes,
-            "horizon_days": horizon_days,
-        })
-        if result:
-            return result
+        if not self.use_mock:
+            result = self._api_post("/api/scenarios/simulate", json={
+                "campaign_id": campaign_id,
+                "budget_changes": budget_changes,
+                "horizon_days": horizon_days,
+            })
+            if result:
+                return result
         # Fallback simulation
         return self._mock_simulate(campaign_id, budget_changes, horizon_days)
 

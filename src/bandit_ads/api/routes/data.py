@@ -18,6 +18,7 @@ router = APIRouter()
 # In-memory registry of uploaded files (persists for the process lifetime).
 # A production system would store this in the database.
 _uploaded_files: List[dict] = []
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB per upload
 
 
 class DataSourceStatus(BaseModel):
@@ -72,8 +73,13 @@ async def upload_data_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only CSV and JSON files are supported")
 
     try:
+        file.file.seek(0, io.SEEK_END)
+        size_bytes = file.file.tell()
+        await file.seek(0)
+        if size_bytes > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File too large")
+
         raw = await file.read()
-        size_bytes = len(raw)
         text = raw.decode("utf-8")
 
         from src.bandit_ads.data_loader import MMMDataLoader

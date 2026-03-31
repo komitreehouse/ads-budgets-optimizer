@@ -20,6 +20,7 @@ pyyaml==6.0.1
 google-ads==24.1.0
 facebook-business==19.0.0
 requests==2.31.0
+bcrypt==5.0.0
 python-dotenv==1.0.0
 sqlalchemy==2.0.23
 apscheduler==3.10.4
@@ -32,6 +33,7 @@ openai==1.12.0
 chromadb==0.4.22
 pytrends==4.9.2
 fastapi==0.109.0
+slowapi==0.1.9
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 # Meridian MMM (Bayesian media mix modeling)
